@@ -8,6 +8,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "confirmTitle": "Are you sure?",
     "edit": "Edit",
     "add": "Add expense",
     "navDashboard": "Dashboard",

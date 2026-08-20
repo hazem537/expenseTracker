@@ -12,6 +12,7 @@ import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 function pnlClass(value: number) {
@@ -36,6 +37,7 @@ export function StocksPage() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [trade, setTrade] = useState<{ side: StockTradeSide; holdingId?: string } | null>(null)
+  const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null)
   const [converted, setConverted] = useState<Record<string, { market: number; cost: number }>>({})
 
   const totalMarket = useMemo(
@@ -137,9 +139,7 @@ export function StocksPage() {
               canTrade={accounts.length > 0}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
-              onDelete={() => {
-                if (window.confirm(t('stocks.confirmDelete'))) void deleteHolding(item.id)
-              }}
+              onDelete={() => setDeleteHoldingId(item.id)}
             />
           )
         })}
@@ -147,6 +147,16 @@ export function StocksPage() {
       {!loading && holdings.length === 0 ? (
         <p className="text-sm text-neutral-500">{t('stocks.empty')}</p>
       ) : null}
+      <ConfirmDialog
+        open={deleteHoldingId != null}
+        description={t('stocks.confirmDelete')}
+        onOpenChange={(open) => {
+          if (!open) setDeleteHoldingId(null)
+        }}
+        onConfirm={async () => {
+          if (deleteHoldingId) await deleteHolding(deleteHoldingId)
+        }}
+      />
       <StockFormDialog open={addOpen} lang={lang} onOpenChange={setAddOpen} onSubmit={upsertHolding} />
       <StockTradeDialog
         open={trade != null}

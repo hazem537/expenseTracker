@@ -10,6 +10,7 @@ import { estimateGoldValue, useGoldHoldings } from '@/features/gold/hooks/useGol
 import { pricesFromProfile, useProfile } from '@/features/settings'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function GoldPage() {
@@ -23,6 +24,7 @@ export function GoldPage() {
 
   const [addOpen, setAddOpen] = useState(false)
   const [trade, setTrade] = useState<{ side: GoldTradeSide; holdingId?: string } | null>(null)
+  const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null)
   const fetchedDefaultPrices = useRef(false)
 
   useEffect(() => {
@@ -104,9 +106,7 @@ export function GoldPage() {
               canTrade={accounts.length > 0 && prices != null}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
-              onDelete={() => {
-                if (window.confirm(t('gold.confirmDelete'))) void deleteHolding(item.id)
-              }}
+              onDelete={() => setDeleteHoldingId(item.id)}
             />
           )
         })}
@@ -114,6 +114,16 @@ export function GoldPage() {
       {!loading && holdings.length === 0 ? (
         <p className="text-sm text-neutral-500">{t('gold.empty')}</p>
       ) : null}
+      <ConfirmDialog
+        open={deleteHoldingId != null}
+        description={t('gold.confirmDelete')}
+        onOpenChange={(open) => {
+          if (!open) setDeleteHoldingId(null)
+        }}
+        onConfirm={async () => {
+          if (deleteHoldingId) await deleteHolding(deleteHoldingId)
+        }}
+      />
       <GoldFormDialog
         open={addOpen}
         onOpenChange={setAddOpen}

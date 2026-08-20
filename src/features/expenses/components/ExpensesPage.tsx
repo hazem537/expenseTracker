@@ -11,6 +11,7 @@ import { useProfile } from '@/features/settings'
 import { formatDate } from '@/shared/lib/format'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function ExpensesPage() {
@@ -19,6 +20,7 @@ export function ExpensesPage() {
   const { accounts, reload: reloadAccounts } = useAccounts()
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenses()
   const [dialogExpense, setDialogExpense] = useState<Expense | null | 'new'>(null)
+  const [deleteExpenseTarget, setDeleteExpenseTarget] = useState<Expense | null>(null)
   const lang = i18n.language
   const defaultCurrency = profile?.default_currency ?? 'USD'
   const dialogOpen = dialogExpense !== null
@@ -95,11 +97,7 @@ export function ExpensesPage() {
                   size="icon"
                   className="size-10 text-red-700 hover:text-red-800"
                   aria-label={t('app.delete')}
-                  onClick={() => {
-                    if (window.confirm(t('expense.confirmDelete'))) {
-                      void deleteExpense(item.id).then(() => reloadAccounts())
-                    }
-                  }}
+                  onClick={() => setDeleteExpenseTarget(item)}
                 >
                   <Trash2 />
                 </Button>
@@ -108,6 +106,19 @@ export function ExpensesPage() {
           )
         })}
       </ul>
+
+      <ConfirmDialog
+        open={deleteExpenseTarget != null}
+        description={t('expense.confirmDelete')}
+        onOpenChange={(open) => {
+          if (!open) setDeleteExpenseTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteExpenseTarget) return
+          await deleteExpense(deleteExpenseTarget.id)
+          await reloadAccounts()
+        }}
+      />
 
       <ExpenseFormDialog
         open={dialogOpen}

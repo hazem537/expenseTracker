@@ -11,6 +11,7 @@ import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchan
 import { useProfile } from '@/features/settings'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 
 export function AccountsPage() {
   const { t, i18n } = useTranslation()
@@ -24,6 +25,7 @@ export function AccountsPage() {
   const [transferOpen, setTransferOpen] = useState(false)
   const [depositAccount, setDepositAccount] = useState<Account | null>(null)
   const [editAccount, setEditAccount] = useState<Account | null>(null)
+  const [deleteAccountTarget, setDeleteAccountTarget] = useState<Account | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [weights, setWeights] = useState<Record<string, number>>({})
 
@@ -78,14 +80,7 @@ export function AccountsPage() {
         weights={weights}
         onAddMoney={setDepositAccount}
         onEdit={setEditAccount}
-        onDelete={(account) => {
-          if (!window.confirm(t('accounts.confirmDelete'))) return
-          setActionError(null)
-          void deleteAccount(account.id).catch((err: unknown) => {
-            const message = err instanceof Error ? err.message : ''
-            setActionError(message === 'HAS_EXPENSES' ? t('accounts.cannotDelete') : t('expense.error'))
-          })
-        }}
+        onDelete={setDeleteAccountTarget}
       />
       <RecentTransfers transfers={transfers} accounts={accounts} lang={lang} />
       <AccountFormDialog
@@ -120,6 +115,23 @@ export function AccountsPage() {
           if (!open) setDepositAccount(null)
         }}
         onSubmit={addMoney}
+      />
+      <ConfirmDialog
+        open={deleteAccountTarget != null}
+        description={t('accounts.confirmDelete')}
+        onOpenChange={(open) => {
+          if (!open) setDeleteAccountTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteAccountTarget) return
+          setActionError(null)
+          try {
+            await deleteAccount(deleteAccountTarget.id)
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : ''
+            setActionError(message === 'HAS_EXPENSES' ? t('accounts.cannotDelete') : t('expense.error'))
+          }
+        }}
       />
       <TransferDialog
         open={transferOpen}

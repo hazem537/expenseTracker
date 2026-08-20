@@ -93,7 +93,7 @@ export function StocksPage() {
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-heading">{t('app.navStocks')}</h1>
+        <h1 className="text-2xl font-bold text-heading dark:text-ivory">{t('app.navStocks')}</h1>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" className="rounded-xl" disabled={quotesLoading} onClick={() => void refresh()}>
             <RefreshCw className={quotesLoading ? 'animate-spin' : undefined} />
@@ -110,13 +110,13 @@ export function StocksPage() {
       {quotesError ? <p className="text-sm text-amber-700">{t('stocks.quoteUnavailable')}</p> : null}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-stock/30 bg-gradient-to-br from-navy to-navy-mid p-4">
-          <p className="text-sm text-stock-soft">{t('stocks.totalValue')}</p>
+          <p className="text-sm text-[#dceee5]">{t('stocks.totalValue')}</p>
           <p className="text-xl font-semibold text-white">
             <MoneyText amount={totalMarket} lang={lang} currency={defaultCurrency} />
           </p>
         </div>
         <div className="rounded-2xl border border-stock/30 bg-gradient-to-br from-navy to-navy-mid p-4">
-          <p className="text-sm text-stock-soft">{t('stocks.unrealized')}</p>
+          <p className="text-sm text-[#dceee5]">{t('stocks.unrealized')}</p>
           <p className={`text-xl font-semibold ${pnlClass(totalPnl)}`}>
             <MoneyText amount={totalPnl} lang={lang} currency={defaultCurrency} />
             {totalWinRatio == null ? '' : ` (${totalWinRatio >= 0 ? '+' : ''}${totalWinRatio.toFixed(1)}%)`}

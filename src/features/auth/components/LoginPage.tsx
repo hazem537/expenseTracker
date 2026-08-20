@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
-import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase'
+import { isSupabaseConfigured, supabase, authEmailRedirectTo } from '@/shared/lib/supabase'
 import iconMail from '../assets/icon-mail.svg'
 import iconLock from '../assets/icon-lock.svg'
 import iconEye from '../assets/icon-eye.svg'
@@ -29,7 +29,11 @@ export function LoginPage() {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) setError(t('auth.error'))
     } else {
-      const { error: authError } = await supabase.auth.signUp({ email, password })
+      const { error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: authEmailRedirectTo },
+      })
       if (authError) setError(t('auth.error'))
       else setInfo(t('auth.signupOk'))
     }

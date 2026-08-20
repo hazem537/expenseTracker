@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from '@/shared/lib/supabase'
+import { supabase, authEmailRedirectTo } from '@/shared/lib/supabase'
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null)
@@ -33,7 +33,11 @@ export function useAuth() {
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) throw new Error('Supabase is not configured')
-    return supabase.auth.signUp({ email, password })
+    return supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: authEmailRedirectTo },
+    })
   }, [])
 
   const signOut = useCallback(async () => {

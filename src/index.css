@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-cream: var(--cream);
   --color-ivory: var(--ivory);
@@ -14,6 +16,7 @@
   --color-stock: var(--stock);
   --color-stock-soft: var(--stock-soft);
   --color-surface: var(--surface);
+  --font-header: var(--header-font);
 }
 
 :root {
@@ -30,6 +33,7 @@
   --stock: #1b7a52;
   --stock-soft: #dceee5;
   --surface: #fffdf8;
+  --header-font: 'Cormorant Garamond', 'Times New Roman', serif;
 }
 
 html.dark {
@@ -49,11 +53,26 @@ html.dark {
 }
 
 html {
-  font-family: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', 'Cairo', system-ui, sans-serif;
 }
 
 html[lang='ar'] {
-  font-family: 'IBM Plex Sans Arabic', 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: 'Cairo', 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 16.5px;
+  letter-spacing: 0;
+  --header-font: 'El Messiri', 'Cairo', sans-serif;
+}
+
+html[lang='ar'] h1,
+html[lang='ar'] h2,
+html[lang='ar'] h3 {
+  font-family: 'Amiri', 'Cairo', serif;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+header {
+  font-family: var(--header-font);
 }
 
 body {

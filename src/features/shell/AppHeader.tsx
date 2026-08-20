@@ -13,7 +13,7 @@ interface AppHeaderProps {
 const navIdle =
   'rounded-full px-3 py-2 text-sm font-medium text-ink hover:bg-navy hover:text-gold-bright'
 const navActive =
-  'rounded-full bg-navy px-3 py-2 text-sm font-medium text-gold-bright ring-1 ring-gold/50'
+  'rounded-full bg-navy px-3 py-2 text-sm font-medium text-ivory ring-1 ring-gold/50 dark:text-gold-bright'
 
 export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
   const { t } = useTranslation()
@@ -25,7 +25,7 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
           <span className="flex size-9 items-center justify-center rounded-full bg-navy">
             <Wallet className="size-[18px] text-gold-bright" />
           </span>
-          <p className="text-xl font-semibold leading-7 text-heading">{t('app.name')}</p>
+          <p className="font-header text-xl font-semibold leading-7 tracking-wide text-heading">{t('app.name')}</p>
         </div>
         <div className="flex items-center gap-1">
           <HideMoneyButton />

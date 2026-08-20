@@ -57,7 +57,13 @@ export function DashboardPage() {
       />
       {!loading ? (
         <Suspense fallback={<p className="text-sm text-muted">{t('app.loading')}</p>}>
-          <DashboardCharts expenses={expenses} year={range.year} monthIndex={range.month} />
+          <DashboardCharts
+            expenses={expenses}
+            year={range.year}
+            monthIndex={range.month}
+            lang={lang}
+            currency={currency}
+          />
         </Suspense>
       ) : null}
       <AddExpenseFab onClick={() => setAddOpen(true)} />

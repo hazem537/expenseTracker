@@ -1,15 +1,15 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Coins, LayoutDashboard, LineChart, PieChart, Receipt, Settings, Wallet } from 'lucide-react'
+import { Coins, Home, Landmark, PieChart, Receipt, Settings, TrendingUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 const items = [
-  { to: '/', labelKey: 'app.navDashboard', icon: LayoutDashboard },
+  { to: '/', labelKey: 'app.navDashboard', icon: Home },
   { to: '/summary', labelKey: 'app.navSummary', icon: PieChart },
   { to: '/expenses', labelKey: 'app.navExpenses', icon: Receipt },
-  { to: '/accounts', labelKey: 'app.navAccounts', icon: Wallet },
+  { to: '/accounts', labelKey: 'app.navAccounts', icon: Landmark },
   { to: '/gold', labelKey: 'app.navGold', icon: Coins },
-  { to: '/stocks', labelKey: 'app.navStocks', icon: LineChart },
+  { to: '/stocks', labelKey: 'app.navStocks', icon: TrendingUp },
   { to: '/settings', labelKey: 'app.navSettings', icon: Settings },
 ] as const
 
@@ -18,28 +18,23 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around rounded-t-xl bg-white px-1 shadow-[0px_-1px_1.5px_rgba(15,23,42,0.03)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around rounded-t-xl bg-white px-2 shadow-[0px_-1px_1.5px_rgba(15,23,42,0.03)] md:hidden">
       {items.map((item) => {
         const isActive = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)
         const Icon = item.icon
+        const label = t(item.labelKey)
         return (
           <Link
             key={item.to}
             to={item.to}
+            aria-label={label}
+            title={label}
             className={cn(
-              'flex min-w-0 flex-1 flex-col items-center justify-center px-1 py-1',
-              isActive && 'rounded-full bg-[#131b2e]',
+              'flex size-11 items-center justify-center rounded-full',
+              isActive && 'bg-[#131b2e]',
             )}
           >
-            <Icon className={cn('size-[18px]', isActive ? 'text-white' : 'text-[#45464d]')} />
-            <span
-              className={cn(
-                'pt-1 text-xs font-semibold tracking-[0.6px]',
-                isActive ? 'text-[#7c839b]' : 'text-[#45464d]',
-              )}
-            >
-              {t(item.labelKey)}
-            </span>
+            <Icon className={cn('size-5', isActive ? 'text-white' : 'text-[#45464d]')} />
           </Link>
         )
       })}

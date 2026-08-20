@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import type { Session } from '@supabase/supabase-js'
 import { routeTree } from './routeTree.gen'
-import { useAuth } from './hooks/useAuth'
+import { useAuth } from '@/features/auth'
 import { useTranslation } from 'react-i18next'
-import './i18n'
+import '@/shared/i18n'
 import './index.css'
 
 const router = createRouter({

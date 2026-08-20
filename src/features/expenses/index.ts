@@ -1,0 +1,5 @@
+export { useExpenses, type Expense, type ExpenseInput } from './hooks/useExpenses'
+export { ExpenseForm } from './components/ExpenseForm'
+export { ExpenseFormDialog } from './components/ExpenseFormDialog'
+export { ExpensesPage } from './components/ExpensesPage'
+export { CATEGORIES, CATEGORY_COLORS, type Category } from './lib/categories'

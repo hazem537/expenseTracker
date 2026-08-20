@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Expense Tracker",
+    "name": "bankKhana",
     "signOut": "Sign out",
     "hideMoney": "Hide amounts",
     "showMoney": "Show amounts",
@@ -11,6 +11,7 @@
     "edit": "Edit",
     "add": "Add expense",
     "navDashboard": "Dashboard",
+    "navSummary": "Summary",
     "navExpenses": "Expenses",
     "navAccounts": "Accounts",
     "navGold": "Gold",
@@ -27,8 +28,8 @@
   "auth": {
     "titleLogin": "Sign in",
     "titleSignup": "Create account",
-    "subtitleLogin": "Access your Expense Tracker",
-    "subtitleSignup": "Create your Expense Tracker account",
+    "subtitleLogin": "Access bankKhana",
+    "subtitleSignup": "Create your bankKhana account",
     "email": "Email Address",
     "emailPlaceholder": "name@company.com",
     "password": "Password",
@@ -71,6 +72,7 @@
     "wealthGold": "Gold",
     "wealthStocks": "Stocks",
     "wealthEmpty": "Add accounts, gold, or stocks to see this chart.",
+    "summaryHelp": "Your money across accounts, gold, and stocks.",
     "dayAxis": "Day",
     "amountAxis": "Amount"
   },
@@ -87,7 +89,12 @@
   "settings": {
     "defaultCurrency": "Standard currency",
     "defaultCurrencyHelp": "Dashboard totals use this currency. When you spend from another currency, enter what it equals in this one.",
-    "saved": "Saved."
+    "saved": "Saved.",
+    "installTitle": "Install on your phone",
+    "installBody": "Add bankKhana to your home screen. It opens like an app and keeps the last screen for offline use.",
+    "installAction": "Install",
+    "installIos": "On iPhone: tap Share, then Add to Home Screen.",
+    "installAndroid": "On Android Chrome: open the menu, then Install app or Add to Home screen."
   },
   "gold": {
     "title": "Gold",

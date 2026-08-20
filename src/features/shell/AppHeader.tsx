@@ -45,6 +45,13 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
             {t('app.navDashboard')}
           </Link>
           <Link
+            to="/summary"
+            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
+            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
+          >
+            {t('app.navSummary')}
+          </Link>
+          <Link
             to="/expenses"
             activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
             className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"

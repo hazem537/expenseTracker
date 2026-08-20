@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { StockHolding } from '@/features/stocks/hooks/useStockHoldings'
 import type { StockQuote } from '@/features/stocks/lib/quote'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 function pnlClass(value: number) {
   if (value > 0.004) return 'text-emerald-600'
@@ -50,13 +50,22 @@ export function StockHoldingRow({
             {quote?.name ? <span className="font-normal text-neutral-500"> · {quote.name}</span> : null}
           </p>
           <p className="text-sm text-neutral-500">
-            {item.shares} × {formatAmount(item.avg_cost, lang, item.quote_currency)}
+            {item.shares} × <MoneyText amount={item.avg_cost} lang={lang} currency={item.quote_currency} />
           </p>
           <p className="text-sm text-neutral-500">
-            {quote
-              ? `${t('stocks.live')}: ${formatAmount(quote.price, lang, quote.currency)}`
-              : t('stocks.quoteUnavailable')}
-            {live != null ? ` · ${formatAmount(live, lang, quote?.currency ?? item.quote_currency)}` : ''}
+            {quote ? (
+              <>
+                {t('stocks.live')}: <MoneyText amount={quote.price} lang={lang} currency={quote.currency} />
+              </>
+            ) : (
+              t('stocks.quoteUnavailable')
+            )}
+            {live != null ? (
+              <>
+                {' · '}
+                <MoneyText amount={live} lang={lang} currency={quote?.currency ?? item.quote_currency} />
+              </>
+            ) : null}
           </p>
         </div>
         <div className="flex items-start gap-1">
@@ -86,13 +95,22 @@ export function StockHoldingRow({
         <div className="rounded-xl bg-neutral-50 p-2">
           <p className="text-xs text-neutral-500">{t('stocks.totalValue')}</p>
           <p className={`text-sm font-semibold ${pnl == null ? '' : pnlClass(pnl)}`}>
-            {values ? formatAmount(values.market, lang, defaultCurrency) : '—'}
+            {values ? <MoneyText amount={values.market} lang={lang} currency={defaultCurrency} /> : '—'}
           </p>
         </div>
         <div className="rounded-xl bg-neutral-50 p-2">
           <p className="text-xs text-neutral-500">{t('stocks.unrealized')}</p>
           <p className={`text-sm font-semibold ${pnl == null ? '' : pnlClass(pnl)}`}>
-            {pnl == null ? '—' : `${pnl >= 0 ? '+' : ''}${formatAmount(pnl, lang, defaultCurrency)}`}
+            {pnl == null ? (
+              '—'
+            ) : (
+              <MoneyText
+                amount={pnl}
+                lang={lang}
+                currency={defaultCurrency}
+                prefix={pnl >= 0 ? '+' : ''}
+              />
+            )}
           </p>
         </div>
       </div>

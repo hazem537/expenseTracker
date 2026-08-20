@@ -10,9 +10,17 @@ function readHideMoney() {
 }
 
 let moneyHidden = readHideMoney()
+const hideMoneyListeners = new Set<() => void>()
 
 export function isMoneyHidden() {
   return moneyHidden
+}
+
+export function subscribeHideMoney(onStoreChange: () => void) {
+  hideMoneyListeners.add(onStoreChange)
+  return () => {
+    hideMoneyListeners.delete(onStoreChange)
+  }
 }
 
 export function setMoneyHidden(next: boolean) {
@@ -22,6 +30,7 @@ export function setMoneyHidden(next: boolean) {
   } catch {
     /* ignore */
   }
+  hideMoneyListeners.forEach((listener) => listener())
 }
 
 export function localeForLang(lang: string) {
@@ -29,7 +38,7 @@ export function localeForLang(lang: string) {
 }
 
 export function formatAmount(amount: number, lang: string, currency?: string) {
-  if (moneyHidden) return HIDDEN_MONEY
+  if (isMoneyHidden()) return HIDDEN_MONEY
   if (currency) {
     return new Intl.NumberFormat(localeForLang(lang), {
       style: 'currency',

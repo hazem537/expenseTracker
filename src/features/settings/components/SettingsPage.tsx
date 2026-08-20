@@ -4,6 +4,7 @@ import { GoldPricesSection } from '@/features/gold'
 import { useProfile } from '@/features/settings/hooks/useProfile'
 import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
 import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase'
+import { InstallAppCard } from '@/shared/ui/InstallAppCard'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function SettingsPage() {
@@ -66,6 +67,7 @@ export function SettingsPage() {
         </form>
       ) : null}
       {profile ? <GoldPricesSection /> : null}
+      <InstallAppCard />
       <button
         type="button"
         className="min-h-12 w-full rounded-xl border border-[#c6c6cd] bg-white font-medium text-[#45464d] md:hidden"

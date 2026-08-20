@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { estimateGoldValue, type GoldHolding } from '@/features/gold/hooks/useGoldHoldings'
 import type { KaratPrices } from '@/features/gold/lib/gold'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 interface GoldHoldingRowProps {
   item: GoldHolding
@@ -59,7 +59,7 @@ export function GoldHoldingRow({
         <div className="rounded-xl bg-neutral-50 p-2">
           <p className="text-xs text-neutral-500">{t('gold.totalMoney')}</p>
           <p className="text-sm font-semibold">
-            {value == null ? '—' : formatAmount(value, lang, defaultCurrency)}
+            {value == null ? '—' : <MoneyText amount={value} lang={lang} currency={defaultCurrency} />}
           </p>
         </div>
       </div>

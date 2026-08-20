@@ -9,7 +9,7 @@ import { GoldTradeDialog, type GoldTradeSide } from '@/features/gold/components/
 import { estimateGoldValue, useGoldHoldings } from '@/features/gold/hooks/useGoldHoldings'
 import { pricesFromProfile, useProfile } from '@/features/settings'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function GoldPage() {
@@ -85,7 +85,7 @@ export function GoldPage() {
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-sm text-neutral-500">{t('gold.totalMoney')}</p>
           <p className="text-xl font-semibold">
-            {totalValue == null ? '—' : formatAmount(totalValue, lang, defaultCurrency)}
+            {totalValue == null ? '—' : <MoneyText amount={totalValue} lang={lang} currency={defaultCurrency} />}
           </p>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 interface AccountListItemProps {
   account: Account
@@ -48,7 +48,9 @@ export function AccountListItem({
         </div>
         <div className="rounded-xl bg-neutral-50 p-2">
           <p className="text-xs text-neutral-500">{t('accounts.balance')}</p>
-          <p className="text-sm font-semibold">{formatAmount(account.balance, lang, account.currency)}</p>
+          <p className="text-sm font-semibold">
+            <MoneyText amount={account.balance} lang={lang} currency={account.currency} />
+          </p>
         </div>
       </div>
       {weight != null ? (

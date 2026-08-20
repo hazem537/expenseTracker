@@ -11,7 +11,7 @@ import { useStockHoldings } from '@/features/stocks/hooks/useStockHoldings'
 import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 function pnlClass(value: number) {
@@ -110,13 +110,13 @@ export function StocksPage() {
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-sm text-neutral-500">{t('stocks.totalValue')}</p>
           <p className="text-xl font-semibold text-neutral-900">
-            {formatAmount(totalMarket, lang, defaultCurrency)}
+            <MoneyText amount={totalMarket} lang={lang} currency={defaultCurrency} />
           </p>
         </div>
         <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-sm text-neutral-500">{t('stocks.unrealized')}</p>
           <p className={`text-xl font-semibold ${pnlClass(totalPnl)}`}>
-            {formatAmount(totalPnl, lang, defaultCurrency)}
+            <MoneyText amount={totalPnl} lang={lang} currency={defaultCurrency} />
             {totalWinRatio == null ? '' : ` (${totalWinRatio >= 0 ? '+' : ''}${totalWinRatio.toFixed(1)}%)`}
           </p>
         </div>

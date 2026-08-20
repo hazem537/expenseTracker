@@ -19,6 +19,7 @@ import {
   type StockQuote,
 } from '@/features/stocks/lib/quote'
 import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 const selectClass =
   'flex h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-neutral-400'
@@ -239,7 +240,7 @@ export function StockTradeDialog({
             </div>
             {quote ? (
               <p className="text-sm text-neutral-600">
-                {quote.name} · {formatAmount(quote.price, lang, quote.currency)} (
+                {quote.name} · <MoneyText amount={quote.price} lang={lang} currency={quote.currency} /> (
                 {t(quote.source === 'EGX' ? 'stocks.sourceEgx' : 'stocks.sourceYahoo')})
               </p>
             ) : null}
@@ -247,7 +248,7 @@ export function StockTradeDialog({
             {receive != null && account ? (
               <p className="text-sm font-medium">
                 {side === 'buy' ? t('stocks.payAmount') : t('accounts.receiveAmount')}:{' '}
-                {formatAmount(receive, lang, account.currency)}
+                <MoneyText amount={receive} lang={lang} currency={account.currency} />
               </p>
             ) : null}
             {error ? <p className="text-sm text-red-600">{error}</p> : null}

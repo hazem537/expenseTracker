@@ -8,6 +8,7 @@ function applyDocumentLang(lng: string) {
   const lang = lng.startsWith('ar') ? 'ar' : 'en'
   document.documentElement.lang = lang
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
+  document.title = lang === 'ar' ? 'بنكخانه' : 'bankKhana'
 }
 
 void i18n

@@ -5,7 +5,6 @@ import { AccountStrip } from '@/features/dashboard/components/AccountStrip'
 import { AddExpenseFab } from '@/features/dashboard/components/AddExpenseFab'
 import { DashboardMonthHeader } from '@/features/dashboard/components/DashboardMonthHeader'
 import { MonthStatCards } from '@/features/dashboard/components/MonthStatCards'
-import { WealthOverview } from '@/features/dashboard/components/WealthOverview'
 import { ExpenseFormDialog, useExpenses } from '@/features/expenses'
 import { useProfile } from '@/features/settings'
 import { monthRange } from '@/shared/lib/format'
@@ -41,7 +40,6 @@ export function DashboardPage() {
       />
       {loading ? <p className="text-sm text-[#45464d]">{t('app.loading')}</p> : null}
       {error ? <p className="text-sm text-red-600">{t('expense.error')}</p> : null}
-      <WealthOverview accounts={accounts} lang={lang} />
       <AccountStrip
         accounts={accounts}
         lang={lang}

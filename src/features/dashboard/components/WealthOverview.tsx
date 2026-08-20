@@ -7,7 +7,7 @@ import { pricesFromProfile, useProfile } from '@/features/settings'
 import { useStockHoldings } from '@/features/stocks/hooks/useStockHoldings'
 import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
-import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 const COLORS = {
   accounts: '#131b2e',
@@ -115,7 +115,9 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
   return (
     <section className={card}>
       <h2 className="mb-1 text-xl font-semibold leading-7 text-black">{t('dashboard.wealthTitle')}</h2>
-      <p className="mb-4 text-2xl font-semibold text-black">{formatAmount(total, lang, defaultCurrency)}</p>
+      <p className="mb-4 text-2xl font-semibold text-black">
+        <MoneyText amount={total} lang={lang} currency={defaultCurrency} />
+      </p>
       {total <= 0 ? (
         <p className="text-[#45464d]">{t('dashboard.wealthEmpty')}</p>
       ) : (
@@ -136,7 +138,7 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
                 <div>
                   <p className="text-xs text-[#45464d]">{t('dashboard.wealthTotal')}</p>
                   <p className="text-sm font-semibold leading-5 text-black">
-                    {formatAmount(total, lang, defaultCurrency)}
+                    <MoneyText amount={total} lang={lang} currency={defaultCurrency} />
                   </p>
                 </div>
               </div>
@@ -150,7 +152,8 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
                   {slice.label}
                 </span>
                 <span className="font-medium">
-                  {formatAmount(slice.value, lang, defaultCurrency)} · {((slice.value / total) * 100).toFixed(1)}%
+                  <MoneyText amount={slice.value} lang={lang} currency={defaultCurrency} /> ·{' '}
+                  {((slice.value / total) * 100).toFixed(1)}%
                 </span>
               </li>
             ))}

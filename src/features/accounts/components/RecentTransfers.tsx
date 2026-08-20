@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Account, Transfer } from '@/features/accounts/hooks/useAccounts'
-import { formatAmount, formatDate } from '@/shared/lib/format'
+import { formatDate } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 interface RecentTransfersProps {
   transfers: Transfer[]
@@ -23,8 +24,8 @@ export function RecentTransfers({ transfers, accounts, lang }: RecentTransfersPr
             <li key={item.id} className="rounded-xl bg-white p-3 text-sm shadow-sm">
               {from?.name} → {to?.name} · {formatDate(item.occurred_on, lang)}
               <div className="mt-1 text-slate-600">
-                {formatAmount(item.from_amount, lang, from?.currency)} →{' '}
-                {formatAmount(item.to_amount, lang, to?.currency)}
+                <MoneyText amount={item.from_amount} lang={lang} currency={from?.currency} /> →{' '}
+                <MoneyText amount={item.to_amount} lang={lang} currency={to?.currency} />
               </div>
             </li>
           )

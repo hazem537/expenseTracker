@@ -16,6 +16,7 @@ import { estimateGoldValue, type GoldHolding } from '@/features/gold/hooks/useGo
 import { KARATS, type Karat, type KaratPrices } from '@/features/gold/lib/gold'
 import type { CurrencyCode } from '@/shared/lib/currencies'
 import { formatAmount } from '@/shared/lib/format'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 const selectClass =
   'flex h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-neutral-400'
@@ -233,14 +234,14 @@ export function GoldTradeDialog({
             </div>
             {valueInBase != null ? (
               <p className="text-sm text-neutral-600">
-                {t('gold.valueInBase')}: {formatAmount(valueInBase, lang, defaultCurrency)}
+                {t('gold.valueInBase')}: <MoneyText amount={valueInBase} lang={lang} currency={defaultCurrency} />
               </p>
             ) : null}
             {converting ? <p className="text-sm text-neutral-500">{t('accounts.converting')}</p> : null}
             {receive != null && account ? (
               <p className="text-sm font-medium">
                 {side === 'buy' ? t('gold.payAmount') : t('accounts.receiveAmount')}:{' '}
-                {formatAmount(receive, lang, account.currency)}
+                <MoneyText amount={receive} lang={lang} currency={account.currency} />
               </p>
             ) : null}
             {error ? <p className="text-sm text-red-600">{error}</p> : null}

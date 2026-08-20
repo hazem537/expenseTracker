@@ -1,7 +1,7 @@
 import { CreditCard, Wallet } from 'lucide-react'
 import type { Account } from '@/features/accounts'
-import { formatLedger } from '@/features/dashboard/lib/formatLedger'
 import { dashboardCard } from '@/features/dashboard/lib/styles'
+import { MoneyText } from '@/shared/ui/HideMoney'
 
 function isCardAccount(name: string) {
   return /visa|card|bank|credit/i.test(name)
@@ -22,7 +22,7 @@ export function AccountCard({ account, lang }: AccountCardProps) {
       <Icon className="mb-auto size-5 text-neutral-800" />
       <p className="text-sm leading-5 text-[#45464d]">{account.name}</p>
       <p className="text-xl font-semibold leading-7 text-black">
-        {formatLedger(account.balance, account.currency, lang)}
+        <MoneyText amount={account.balance} lang={lang} currency={account.currency} ledger />
       </p>
     </article>
   )

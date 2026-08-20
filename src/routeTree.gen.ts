@@ -17,6 +17,7 @@ import { Route as AppExpensesRouteImport } from './routes/_app/expenses'
 import { Route as AppGoldRouteImport } from './routes/_app/gold'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStocksRouteImport } from './routes/_app/stocks'
+import { Route as AppSummaryRouteImport } from './routes/_app/summary'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -57,6 +58,11 @@ const AppStocksRoute = AppStocksRouteImport.update({
   path: '/stocks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSummaryRoute = AppSummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/gold': typeof AppGoldRoute
   '/settings': typeof AppSettingsRoute
   '/stocks': typeof AppStocksRoute
+  '/summary': typeof AppSummaryRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/gold': typeof AppGoldRoute
   '/settings': typeof AppSettingsRoute
   '/stocks': typeof AppStocksRoute
+  '/summary': typeof AppSummaryRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_app/gold': typeof AppGoldRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/stocks': typeof AppStocksRoute
+  '/_app/summary': typeof AppSummaryRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/gold'
     | '/settings'
     | '/stocks'
+    | '/summary'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/gold'
     | '/settings'
     | '/stocks'
+    | '/summary'
     | '/'
   id:
     | '__root__'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_app/gold'
     | '/_app/settings'
     | '/_app/stocks'
+    | '/_app/summary'
     | '/_app/'
   fileRoutesById: FileRoutesById
 }
@@ -181,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStocksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/summary': {
+      id: '/_app/summary'
+      path: '/summary'
+      fullPath: '/summary'
+      preLoaderRoute: typeof AppSummaryRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -190,6 +209,7 @@ interface AppRouteChildren {
   AppGoldRoute: typeof AppGoldRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStocksRoute: typeof AppStocksRoute
+  AppSummaryRoute: typeof AppSummaryRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -199,6 +219,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGoldRoute: AppGoldRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStocksRoute: AppStocksRoute,
+  AppSummaryRoute: AppSummaryRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

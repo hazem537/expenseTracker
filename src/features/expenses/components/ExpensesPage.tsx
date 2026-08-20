@@ -8,8 +8,9 @@ import { ExpenseFormDialog } from '@/features/expenses/components/ExpenseFormDia
 import { useExpenses, type Expense } from '@/features/expenses/hooks/useExpenses'
 import { CATEGORY_COLORS } from '@/features/expenses/lib/categories'
 import { useProfile } from '@/features/settings'
-import { formatAmount, formatDate } from '@/shared/lib/format'
+import { formatDate } from '@/shared/lib/format'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
+import { MoneyText } from '@/shared/ui/HideMoney'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function ExpensesPage() {
@@ -58,7 +59,7 @@ export function ExpensesPage() {
             <li key={item.id} className="flex items-start justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
               <div>
                 <p className="font-semibold">
-                  {formatAmount(item.amount, lang, account?.currency)}
+                  <MoneyText amount={item.amount} lang={lang} currency={account?.currency} />
                 </p>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                   <span

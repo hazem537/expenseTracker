@@ -1,32 +1,43 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { isMoneyHidden, setMoneyHidden } from '@/shared/lib/format'
-
-interface HideMoneyContextValue {
-  hidden: boolean
-  toggle: () => void
-}
-
-const HideMoneyContext = createContext<HideMoneyContextValue>({
-  hidden: false,
-  toggle: () => undefined,
-})
-
-export function HideMoneyProvider({ children }: { children: ReactNode }) {
-  const [hidden, setHidden] = useState(isMoneyHidden)
-
-  function toggle() {
-    const next = !hidden
-    setMoneyHidden(next)
-    setHidden(next)
-  }
-
-  return <HideMoneyContext.Provider value={{ hidden, toggle }}>{children}</HideMoneyContext.Provider>
-}
+import { formatAmount, isMoneyHidden, localeForLang, setMoneyHidden, subscribeHideMoney } from '@/shared/lib/format'
 
 export function useHideMoney() {
-  return useContext(HideMoneyContext)
+  const hidden = useSyncExternalStore(subscribeHideMoney, isMoneyHidden, isMoneyHidden)
+  const toggle = useCallback(() => {
+    setMoneyHidden(!isMoneyHidden())
+  }, [])
+  return { hidden, toggle }
+}
+
+export function MoneyText({
+  amount,
+  lang,
+  currency,
+  ledger,
+  prefix,
+}: {
+  amount: number
+  lang: string
+  currency?: string
+  ledger?: boolean
+  prefix?: string
+}) {
+  const { hidden } = useHideMoney()
+  if (hidden) return <span>••••</span>
+  const value = ledger && currency
+    ? `${currency} ${new Intl.NumberFormat(localeForLang(lang), {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount)}`
+    : formatAmount(amount, lang, currency)
+  return (
+    <span>
+      {prefix}
+      {value}
+    </span>
+  )
 }
 
 export function HideMoneyButton() {

@@ -1,10 +1,11 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Coins, LayoutDashboard, LineChart, Receipt, Settings, Wallet } from 'lucide-react'
+import { Coins, LayoutDashboard, LineChart, PieChart, Receipt, Settings, Wallet } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 const items = [
   { to: '/', labelKey: 'app.navDashboard', icon: LayoutDashboard },
+  { to: '/summary', labelKey: 'app.navSummary', icon: PieChart },
   { to: '/expenses', labelKey: 'app.navExpenses', icon: Receipt },
   { to: '/accounts', labelKey: 'app.navAccounts', icon: Wallet },
   { to: '/gold', labelKey: 'app.navGold', icon: Coins },

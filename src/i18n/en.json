@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "Expense Tracker",
+    "signOut": "Sign out",
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add expense",
+    "navDashboard": "Dashboard",
+    "navExpenses": "Expenses",
+    "setupTitle": "Connect Supabase",
+    "setupBody": "Copy .env.example to .env, add your project URL and anon key, then restart the app."
+  },
+  "lang": {
+    "ar": "AR",
+    "en": "EN"
+  },
+  "auth": {
+    "titleLogin": "Sign in",
+    "titleSignup": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "submitLogin": "Sign in",
+    "submitSignup": "Sign up",
+    "switchToSignup": "Need an account? Sign up",
+    "switchToLogin": "Already have an account? Sign in",
+    "error": "Could not sign in. Check your email and password.",
+    "signupOk": "Account created. Check your email if confirmation is required, then sign in."
+  },
+  "expense": {
+    "amount": "Amount",
+    "category": "Category",
+    "date": "Date",
+    "note": "Note",
+    "noteOptional": "Optional",
+    "empty": "No expenses yet. Add your first one.",
+    "confirmDelete": "Delete this expense?",
+    "error": "Something went wrong. Try again."
+  },
+  "dashboard": {
+    "thisMonth": "This month",
+    "totalSpent": "Total spent",
+    "count": "Expenses",
+    "byCategory": "By category",
+    "byDay": "By day",
+    "emptyChart": "Add expenses this month to see charts.",
+    "dayAxis": "Day",
+    "amountAxis": "Amount"
+  },
+  "categories": {
+    "food": "Food",
+    "transport": "Transport",
+    "housing": "Housing",
+    "bills": "Bills",
+    "shopping": "Shopping",
+    "health": "Health",
+    "entertainment": "Entertainment",
+    "other": "Other"
+  }
+}

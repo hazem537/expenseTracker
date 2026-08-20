@@ -37,7 +37,7 @@ export function AccountList({
         />
       ))}
       {!loading && accounts.length === 0 ? (
-        <li className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-slate-500">
+        <li className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
           {t('accounts.empty')}
         </li>
       ) : null}

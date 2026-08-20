@@ -24,11 +24,11 @@ export function AccountListItem({
   const { t } = useTranslation()
 
   return (
-    <li className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+    <li className="space-y-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold">{account.name}</p>
-          <p className="text-sm text-neutral-500">{account.currency}</p>
+          <p className="text-sm text-muted">{account.currency}</p>
         </div>
         <Button
           type="button"
@@ -42,20 +42,20 @@ export function AccountListItem({
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2 text-center">
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('accounts.weight')}</p>
+        <div className="rounded-xl bg-gold-soft/30 p-2">
+          <p className="text-xs text-muted">{t('accounts.weight')}</p>
           <p className="font-semibold">{weight == null ? '—' : `${weight.toFixed(1)}%`}</p>
         </div>
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('accounts.balance')}</p>
+        <div className="rounded-xl bg-gold-soft/30 p-2">
+          <p className="text-xs text-muted">{t('accounts.balance')}</p>
           <p className="text-sm font-semibold">
             <MoneyText amount={account.balance} lang={lang} currency={account.currency} />
           </p>
         </div>
       </div>
       {weight != null ? (
-        <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
-          <div className="h-full rounded-full bg-[#131b2e]" style={{ width: `${Math.min(weight, 100)}%` }} />
+        <div className="h-1.5 overflow-hidden rounded-full bg-gold-soft/40">
+          <div className="h-full rounded-full bg-navy" style={{ width: `${Math.min(weight, 100)}%` }} />
         </div>
       ) : null}
       <div className="flex gap-2">

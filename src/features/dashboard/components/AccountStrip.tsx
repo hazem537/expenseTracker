@@ -25,7 +25,7 @@ export function AccountStrip({
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-xl font-semibold leading-7 text-black">{t('app.navAccounts')}</h2>
+      <h2 className="text-xl font-semibold leading-7 text-heading">{t('app.navAccounts')}</h2>
       <div className="flex gap-4 overflow-x-auto pb-2">
         {accounts.map((item) => (
           <AccountCard key={item.id} account={item} lang={lang} />

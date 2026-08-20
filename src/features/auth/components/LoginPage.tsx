@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 import { isSupabaseConfigured, supabase, authEmailRedirectTo } from '@/shared/lib/supabase'
 import iconMail from '../assets/icon-mail.svg'
@@ -41,29 +42,30 @@ export function LoginPage() {
   }
 
   const inputClass =
-    'h-12 w-full rounded-xl border border-[#c6c6cd] bg-white py-3.5 text-base text-[#1b1b1d] placeholder:text-[#6b7280] focus:border-[#0f172a] focus:outline-none'
+    'h-12 w-full rounded-xl border border-gold-soft bg-surface py-3.5 text-base text-ink placeholder:text-muted focus:border-gold focus:outline-none'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#fcf8fa] p-4">
-      <div className="flex justify-end">
+    <div className="app-shell flex min-h-dvh flex-col p-4">
+      <div className="flex items-center justify-end gap-1">
+        <ThemeToggle />
         <LanguageToggle />
       </div>
       <div className="flex flex-1 items-center justify-center">
         <div className="w-full max-w-96">
           {!isSupabaseConfigured ? <div className="mb-4"><SetupNotice /></div> : null}
-          <div className="flex flex-col gap-6 rounded-[20px] bg-white p-6 shadow-[0px_1px_1.5px_rgba(15,23,42,0.03),0px_10px_10px_rgba(15,23,42,0.05)]">
+          <div className="flex flex-col gap-6 rounded-[20px] border border-gold-soft/80 bg-surface p-6 shadow-[0_12px_28px_rgba(201,162,39,0.12)]">
             <div className="flex flex-col gap-1 text-center">
-              <h1 className="text-2xl font-bold tracking-[-0.24px] text-[#1b1b1d]">
+              <h1 className="text-2xl font-bold tracking-[-0.24px] text-heading">
                 {mode === 'login' ? t('auth.titleLogin') : t('auth.titleSignup')}
               </h1>
-              <p className="text-sm leading-5 text-[#45464d]">
+              <p className="text-sm leading-5 text-muted">
                 {mode === 'login' ? t('auth.subtitleLogin') : t('auth.subtitleSignup')}
               </p>
             </div>
 
             <form className="flex w-full flex-col gap-4" onSubmit={(e) => void handleSubmit(e)}>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold tracking-[0.6px] text-[#1b1b1d]" htmlFor="email">
+                <label className="text-xs font-semibold tracking-[0.6px] text-heading" htmlFor="email">
                   {t('auth.email')}
                 </label>
                 <div className="relative">
@@ -89,11 +91,11 @@ export function LoginPage() {
 
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold tracking-[0.6px] text-[#1b1b1d]" htmlFor="password">
+                  <label className="text-xs font-semibold tracking-[0.6px] text-heading" htmlFor="password">
                     {t('auth.password')}
                   </label>
                   {mode === 'login' ? (
-                    <span className="text-sm leading-5 text-black">{t('auth.forgot')}</span>
+                    <span className="text-sm leading-5 text-heading">{t('auth.forgot')}</span>
                   ) : null}
                 </div>
                 <div className="relative">
@@ -130,7 +132,7 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={busy || !isSupabaseConfigured}
-                  className="flex h-12 w-full items-center justify-center rounded-xl bg-[#0f172a] text-base leading-6 text-white disabled:opacity-50"
+                  className="flex h-12 w-full items-center justify-center rounded-xl bg-navy text-base leading-6 text-gold-bright disabled:opacity-50"
                 >
                   {mode === 'login' ? t('auth.submitLogin') : t('auth.submitSignup')}
                 </button>
@@ -145,11 +147,11 @@ export function LoginPage() {
               {info ? <p className="text-sm leading-5 text-emerald-700">{info}</p> : null}
             </form>
 
-            <div className="pt-2 text-center text-sm leading-5 text-[#45464d]">
+            <div className="pt-2 text-center text-sm leading-5 text-muted">
               <span>{mode === 'login' ? t('auth.switchToSignup') : t('auth.switchToLogin')} </span>
               <button
                 type="button"
-                className="font-semibold text-black"
+                className="font-semibold text-heading"
                 onClick={() => {
                   setMode(mode === 'login' ? 'signup' : 'login')
                   setError(null)

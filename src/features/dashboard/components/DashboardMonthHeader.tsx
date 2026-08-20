@@ -21,10 +21,10 @@ export function DashboardMonthHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.6px] text-[#45464d]">
+        <p className="text-xs font-semibold uppercase tracking-[0.6px] text-gold">
           {t('dashboard.thisMonth')}
         </p>
-        <h1 className="text-2xl font-bold tracking-[-0.24px] text-black">
+        <h1 className="text-2xl font-bold tracking-[-0.24px] text-heading">
           {formatMonthLabel(year, monthIndex, lang)}
         </h1>
       </div>

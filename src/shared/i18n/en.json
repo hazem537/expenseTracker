@@ -4,6 +4,8 @@
     "signOut": "Sign out",
     "hideMoney": "Hide amounts",
     "showMoney": "Show amounts",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
     "loading": "Loading…",
     "save": "Save",
     "cancel": "Cancel",

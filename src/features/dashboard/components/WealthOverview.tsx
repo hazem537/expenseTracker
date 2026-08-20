@@ -10,9 +10,9 @@ import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const COLORS = {
-  accounts: '#131b2e',
+  accounts: '#0c1424',
   gold: '#c9a227',
-  stocks: '#2f6fed',
+  stocks: '#1b7a52',
 }
 
 interface WealthOverviewProps {
@@ -110,16 +110,16 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
   }, [slices, total])
 
   const card =
-    'w-full rounded-xl border border-[#c6c6cd] bg-white p-6 shadow-[0px_1px_1.5px_rgba(15,23,42,0.03),0px_10px_10px_rgba(15,23,42,0.05)]'
+    'w-full rounded-xl border border-gold-soft/80 bg-surface p-6 shadow-[0_12px_28px_rgba(201,162,39,0.1)]'
 
   return (
     <section className={card}>
-      <h2 className="mb-1 text-xl font-semibold leading-7 text-black">{t('dashboard.wealthTitle')}</h2>
-      <p className="mb-4 text-2xl font-semibold text-black">
+      <h2 className="mb-1 text-xl font-semibold leading-7 text-heading">{t('dashboard.wealthTitle')}</h2>
+      <p className="mb-4 text-2xl font-semibold text-heading">
         <MoneyText amount={total} lang={lang} currency={defaultCurrency} />
       </p>
       {total <= 0 ? (
-        <p className="text-[#45464d]">{t('dashboard.wealthEmpty')}</p>
+        <p className="text-muted">{t('dashboard.wealthEmpty')}</p>
       ) : (
         <>
           <div className="flex h-44 items-center justify-center pb-4">
@@ -136,8 +136,8 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
               />
               <div className="absolute inset-0 flex items-center justify-center px-3 text-center">
                 <div>
-                  <p className="text-xs text-[#45464d]">{t('dashboard.wealthTotal')}</p>
-                  <p className="text-sm font-semibold leading-5 text-black">
+                  <p className="text-xs text-muted">{t('dashboard.wealthTotal')}</p>
+                  <p className="text-sm font-semibold leading-5 text-heading">
                     <MoneyText amount={total} lang={lang} currency={defaultCurrency} />
                   </p>
                 </div>

@@ -42,17 +42,17 @@ export function StockHoldingRow({
   const winRatio = values && values.cost > 0 ? ((values.market - values.cost) / values.cost) * 100 : null
 
   return (
-    <li className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+    <li className="space-y-3 rounded-2xl border border-stock/20 bg-surface p-4 shadow-[0_12px_28px_rgba(27,122,82,0.08)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold">
             {item.symbol}
-            {quote?.name ? <span className="font-normal text-neutral-500"> · {quote.name}</span> : null}
+            {quote?.name ? <span className="font-normal text-muted"> · {quote.name}</span> : null}
           </p>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             {item.shares} × <MoneyText amount={item.avg_cost} lang={lang} currency={item.quote_currency} />
           </p>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted">
             {quote ? (
               <>
                 {t('stocks.live')}: <MoneyText amount={quote.price} lang={lang} currency={quote.currency} />
@@ -88,18 +88,18 @@ export function StockHoldingRow({
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('stocks.weight')}</p>
+        <div className="rounded-xl bg-stock-soft/50 p-2">
+          <p className="text-xs text-muted">{t('stocks.weight')}</p>
           <p className="font-semibold">{weight == null ? '—' : `${weight.toFixed(1)}%`}</p>
         </div>
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('stocks.totalValue')}</p>
+        <div className="rounded-xl bg-stock-soft/50 p-2">
+          <p className="text-xs text-muted">{t('stocks.totalValue')}</p>
           <p className={`text-sm font-semibold ${pnl == null ? '' : pnlClass(pnl)}`}>
             {values ? <MoneyText amount={values.market} lang={lang} currency={defaultCurrency} /> : '—'}
           </p>
         </div>
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('stocks.unrealized')}</p>
+        <div className="rounded-xl bg-stock-soft/50 p-2">
+          <p className="text-xs text-muted">{t('stocks.unrealized')}</p>
           <p className={`text-sm font-semibold ${pnl == null ? '' : pnlClass(pnl)}`}>
             {pnl == null ? (
               '—'
@@ -115,9 +115,9 @@ export function StockHoldingRow({
         </div>
       </div>
       {weight != null ? (
-        <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
+        <div className="h-1.5 overflow-hidden rounded-full bg-stock-soft">
           <div
-            className={`h-full rounded-full ${pnl != null && pnl < 0 ? 'bg-red-500' : 'bg-emerald-600'}`}
+            className={`h-full rounded-full ${pnl != null && pnl < 0 ? 'bg-red-600' : 'bg-stock'}`}
             style={{ width: `${Math.min(weight, 100)}%` }}
           />
         </div>

@@ -21,9 +21,9 @@ export function RecentTransfers({ transfers, accounts, lang }: RecentTransfersPr
           const from = accounts.find((a) => a.id === item.from_account_id)
           const to = accounts.find((a) => a.id === item.to_account_id)
           return (
-            <li key={item.id} className="rounded-xl bg-white p-3 text-sm shadow-sm">
+            <li key={item.id} className="rounded-xl border border-gold-soft/50 bg-surface p-3 text-sm">
               {from?.name} → {to?.name} · {formatDate(item.occurred_on, lang)}
-              <div className="mt-1 text-slate-600">
+              <div className="mt-1 text-muted">
                 <MoneyText amount={item.from_amount} lang={lang} currency={from?.currency} /> →{' '}
                 <MoneyText amount={item.to_amount} lang={lang} currency={to?.currency} />
               </div>

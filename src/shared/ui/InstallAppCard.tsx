@@ -30,9 +30,9 @@ export function InstallAppCard() {
   if (window.matchMedia('(display-mode: standalone)').matches) return null
 
   return (
-    <section className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">
+    <section className="space-y-3 rounded-2xl border border-gold-soft/70 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
       <h2 className="text-lg font-semibold">{t('settings.installTitle')}</h2>
-      <p className="text-sm text-slate-500">{t('settings.installBody')}</p>
+      <p className="text-sm text-muted">{t('settings.installBody')}</p>
       {promptEvent ? (
         <Button
           type="button"
@@ -46,7 +46,7 @@ export function InstallAppCard() {
           {t('settings.installAction')}
         </Button>
       ) : (
-        <p className="text-sm text-slate-600">{iosHint ? t('settings.installIos') : t('settings.installAndroid')}</p>
+        <p className="text-sm text-muted">{iosHint ? t('settings.installIos') : t('settings.installAndroid')}</p>
       )}
     </section>
   )

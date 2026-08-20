@@ -29,7 +29,7 @@ export function ExpensesPage() {
     <div className="space-y-4">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('app.navExpenses')}</h1>
+        <h1 className="text-2xl font-bold text-heading">{t('app.navExpenses')}</h1>
         <Button
           type="button"
           className="rounded-xl"
@@ -40,7 +40,7 @@ export function ExpensesPage() {
         </Button>
       </div>
       {accounts.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-slate-600">
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
           {t('accounts.needAccountFirst')}{' '}
           <Link to="/accounts" className="font-semibold underline">
             {t('app.navAccounts')}
@@ -50,7 +50,7 @@ export function ExpensesPage() {
       {loading ? <p>{t('app.loading')}</p> : null}
       {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {!loading && expenses.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-slate-500">
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
           {t('expense.empty')}
         </p>
       ) : null}
@@ -58,12 +58,12 @@ export function ExpensesPage() {
         {expenses.map((item) => {
           const account = accounts.find((a) => a.id === item.account_id)
           return (
-            <li key={item.id} className="flex items-start justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
+            <li key={item.id} className="flex items-start justify-between gap-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
               <div>
                 <p className="font-semibold">
                   <MoneyText amount={item.amount} lang={lang} currency={account?.currency} />
                 </p>
-                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
                   <span
                     className="inline-block size-2.5 rounded-full"
                     style={{ background: CATEGORY_COLORS[item.category] }}
@@ -78,7 +78,7 @@ export function ExpensesPage() {
                   <span>·</span>
                   {formatDate(item.occurred_on, lang)}
                 </p>
-                {item.note ? <p className="mt-1 text-sm text-slate-500">{item.note}</p> : null}
+                {item.note ? <p className="mt-1 text-sm text-muted">{item.note}</p> : null}
               </div>
               <div className="flex shrink-0 gap-1">
                 <Button

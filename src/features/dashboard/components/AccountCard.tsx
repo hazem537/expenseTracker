@@ -19,9 +19,9 @@ export function AccountCard({ account, lang }: AccountCardProps) {
     <article
       className={`${dashboardCard} flex h-[114px] w-40 shrink-0 flex-col justify-end rounded-xl px-4 pb-4 pt-5`}
     >
-      <Icon className="mb-auto size-5 text-neutral-800" />
-      <p className="text-sm leading-5 text-[#45464d]">{account.name}</p>
-      <p className="text-xl font-semibold leading-7 text-black">
+      <Icon className="mb-auto size-5 text-gold" />
+      <p className="text-sm leading-5 text-muted">{account.name}</p>
+      <p className="text-xl font-semibold leading-7 text-heading">
         <MoneyText amount={account.balance} lang={lang} currency={account.currency} ledger />
       </p>
     </article>

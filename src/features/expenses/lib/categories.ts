@@ -12,12 +12,12 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number]
 
 export const CATEGORY_COLORS: Record<Category, string> = {
-  food: '#0ea5e9',
-  transport: '#6366f1',
-  housing: '#a855f7',
-  bills: '#f97316',
-  shopping: '#ec4899',
-  health: '#22c55e',
-  entertainment: '#eab308',
-  other: '#fbbf24',
+  food: '#8b5e3c',
+  transport: '#1a2740',
+  housing: '#c9a227',
+  bills: '#6d4c2b',
+  shopping: '#3d5a45',
+  health: '#1b7a52',
+  entertainment: '#b8860b',
+  other: '#6d6558',
 }

@@ -19,7 +19,7 @@ import { formatAmount } from '@/shared/lib/format'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const selectClass =
-  'flex h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-neutral-400'
+  'flex h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-gold'
 
 export type GoldTradeSide = 'buy' | 'sell'
 

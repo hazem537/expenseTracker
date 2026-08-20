@@ -5,6 +5,7 @@ import type { Session } from '@supabase/supabase-js'
 import { routeTree } from './routeTree.gen'
 import { useAuth } from '@/features/auth'
 import { useTranslation } from 'react-i18next'
+import '@/shared/lib/theme'
 import '@/shared/i18n'
 import './index.css'
 
@@ -29,7 +30,7 @@ function App() {
 
   if (!ready) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-slate-50 text-slate-600">
+      <div className="app-shell grid min-h-dvh place-items-center text-muted">
         {t('app.loading')}
       </div>
     )

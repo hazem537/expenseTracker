@@ -11,8 +11,8 @@ export function SummaryPage() {
   return (
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
-      <h1 className="text-2xl font-bold">{t('app.navSummary')}</h1>
-      <p className="text-sm text-[#45464d]">{t('dashboard.summaryHelp')}</p>
+      <h1 className="text-2xl font-bold text-heading">{t('app.navSummary')}</h1>
+      <p className="text-sm text-muted">{t('dashboard.summaryHelp')}</p>
       <WealthOverview accounts={accounts} lang={i18n.language} />
     </div>
   )

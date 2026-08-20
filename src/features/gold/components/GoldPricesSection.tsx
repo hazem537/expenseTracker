@@ -87,11 +87,11 @@ export function GoldPricesSection() {
   if (!profile) return null
 
   return (
-    <form className="space-y-4 rounded-2xl bg-white p-5 shadow-sm" onSubmit={(e) => void handleSave(e)}>
+    <form className="space-y-4 rounded-2xl border border-gold-soft/70 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.08)]" onSubmit={(e) => void handleSave(e)}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{t('gold.pricesTitle')}</h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             {t('gold.pricesHelp', { currency: profile.default_currency })}
           </p>
         </div>

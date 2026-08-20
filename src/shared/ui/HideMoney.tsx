@@ -47,7 +47,7 @@ export function HideMoneyButton() {
   return (
     <button
       type="button"
-      className="rounded-full p-2 text-[#45464d] hover:bg-white"
+      className="rounded-full p-2 text-ink hover:bg-navy hover:text-gold-bright"
       aria-label={hidden ? t('app.showMoney') : t('app.hideMoney')}
       onClick={toggle}
     >

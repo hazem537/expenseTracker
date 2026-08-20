@@ -1,5 +1,53 @@
 @import 'tailwindcss';
 
+@theme {
+  --color-cream: var(--cream);
+  --color-ivory: var(--ivory);
+  --color-navy: var(--navy);
+  --color-navy-mid: var(--navy-mid);
+  --color-heading: var(--heading);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-soft: var(--gold-soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-stock: var(--stock);
+  --color-stock-soft: var(--stock-soft);
+  --color-surface: var(--surface);
+}
+
+:root {
+  --cream: #f4efe4;
+  --ivory: #fbf8f1;
+  --navy: #0c1424;
+  --navy-mid: #1a2740;
+  --heading: #0c1424;
+  --gold: #c9a227;
+  --gold-bright: #e4c56a;
+  --gold-soft: #ead9a8;
+  --ink: #14110c;
+  --muted: #6d6558;
+  --stock: #1b7a52;
+  --stock-soft: #dceee5;
+  --surface: #fffdf8;
+}
+
+html.dark {
+  --cream: #080b12;
+  --ivory: #f6f1e6;
+  --navy: #151d2e;
+  --navy-mid: #1e2a42;
+  --heading: #f7f2e8;
+  --gold: #e0c36a;
+  --gold-bright: #f3dd9a;
+  --gold-soft: #d7c59a;
+  --ink: #faf6ee;
+  --muted: #ddd4c4;
+  --stock: #5dcea0;
+  --stock-soft: #1a3d30;
+  --surface: #1c2538;
+}
+
 html {
   font-family: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
 }
@@ -10,4 +58,18 @@ html[lang='ar'] {
 
 body {
   margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.app-shell {
+  background:
+    radial-gradient(1100px 420px at 50% -120px, rgba(201, 162, 39, 0.22), transparent 58%),
+    linear-gradient(180deg, #f8f3e8 0%, #f4efe4 42%, #efe6d4 100%);
+}
+
+html.dark .app-shell {
+  background:
+    radial-gradient(1100px 420px at 50% -120px, rgba(224, 195, 106, 0.2), transparent 58%),
+    linear-gradient(180deg, #141b2b 0%, #080b12 48%, #06080e 100%);
 }

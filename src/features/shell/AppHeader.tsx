@@ -3,31 +3,38 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
 import { HideMoneyButton } from '@/shared/ui/HideMoney'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 interface AppHeaderProps {
   signedIn: boolean
   onSignOut?: () => void
 }
 
+const navIdle =
+  'rounded-full px-3 py-2 text-sm font-medium text-ink hover:bg-navy hover:text-gold-bright'
+const navActive =
+  'rounded-full bg-navy px-3 py-2 text-sm font-medium text-gold-bright ring-1 ring-gold/50'
+
 export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
   const { t } = useTranslation()
 
   return (
-    <header className="bg-[#fcf8fa]">
+    <header>
       <div className="mx-auto flex h-12 max-w-[768px] items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-full">
-            <Wallet className="size-[18px] text-black" />
+          <span className="flex size-9 items-center justify-center rounded-full bg-navy">
+            <Wallet className="size-[18px] text-gold-bright" />
           </span>
-          <p className="text-xl font-semibold leading-7 text-black">{t('app.name')}</p>
+          <p className="text-xl font-semibold leading-7 text-heading">{t('app.name')}</p>
         </div>
         <div className="flex items-center gap-1">
           <HideMoneyButton />
+          <ThemeToggle />
           <LanguageToggle compact />
           {signedIn && onSignOut ? (
             <button
               type="button"
-              className="hidden min-h-10 rounded-lg px-3 text-sm font-medium text-[#45464d] hover:bg-white md:inline"
+              className="hidden min-h-10 rounded-lg px-3 text-sm font-medium text-ink hover:bg-navy hover:text-gold-bright md:inline"
               onClick={onSignOut}
             >
               {t('app.signOut')}
@@ -37,53 +44,25 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
       </div>
       {signedIn ? (
         <nav className="mx-auto hidden max-w-[768px] gap-2 px-4 pb-2 md:flex">
-          <Link
-            to="/"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navDashboard')}
           </Link>
-          <Link
-            to="/summary"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/summary" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navSummary')}
           </Link>
-          <Link
-            to="/expenses"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/expenses" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navExpenses')}
           </Link>
-          <Link
-            to="/accounts"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/accounts" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navAccounts')}
           </Link>
-          <Link
-            to="/gold"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/gold" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navGold')}
           </Link>
-          <Link
-            to="/stocks"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/stocks" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navStocks')}
           </Link>
-          <Link
-            to="/settings"
-            activeProps={{ className: 'rounded-full bg-[#131b2e] px-3 py-2 text-sm font-medium text-white' }}
-            className="rounded-full px-3 py-2 text-sm font-medium text-[#45464d] hover:bg-white"
-          >
+          <Link to="/settings" activeProps={{ className: navActive }} className={navIdle}>
             {t('app.navSettings')}
           </Link>
         </nav>

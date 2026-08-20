@@ -48,7 +48,7 @@ export function GoldPage() {
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('app.navGold')}</h1>
+        <h1 className="text-2xl font-bold text-heading">{t('app.navGold')}</h1>
         <div className="flex gap-2">
           <Button
             type="button"
@@ -70,7 +70,7 @@ export function GoldPage() {
             <TrendingUp />
             {t('gold.buy')}
           </Button>
-          <Button type="button" className="rounded-xl" onClick={() => setAddOpen(true)}>
+          <Button type="button" variant="gold" className="rounded-xl" onClick={() => setAddOpen(true)}>
             <Plus />
             {t('gold.add')}
           </Button>
@@ -80,13 +80,13 @@ export function GoldPage() {
       {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {!prices ? <p className="text-sm text-amber-700">{t('gold.setPricesFirst')}</p> : null}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm text-neutral-500">{t('gold.totalGrams')}</p>
-          <p className="text-xl font-semibold">{totalGrams.toFixed(3)} g</p>
+        <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-navy to-navy-mid p-4">
+          <p className="text-sm text-gold-soft">{t('gold.totalGrams')}</p>
+          <p className="text-xl font-semibold text-gold-bright">{totalGrams.toFixed(3)} g</p>
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm text-neutral-500">{t('gold.totalMoney')}</p>
-          <p className="text-xl font-semibold">
+        <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-navy to-navy-mid p-4">
+          <p className="text-sm text-gold-soft">{t('gold.totalMoney')}</p>
+          <p className="text-xl font-semibold text-gold-bright">
             {totalValue == null ? '—' : <MoneyText amount={totalValue} lang={lang} currency={defaultCurrency} />}
           </p>
         </div>
@@ -112,7 +112,7 @@ export function GoldPage() {
         })}
       </ul>
       {!loading && holdings.length === 0 ? (
-        <p className="text-sm text-neutral-500">{t('gold.empty')}</p>
+        <p className="text-sm text-muted">{t('gold.empty')}</p>
       ) : null}
       <ConfirmDialog
         open={deleteHoldingId != null}

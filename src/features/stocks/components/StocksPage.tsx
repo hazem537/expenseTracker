@@ -16,9 +16,9 @@ import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 function pnlClass(value: number) {
-  if (value > 0.004) return 'text-emerald-600'
-  if (value < -0.004) return 'text-red-600'
-  return 'text-neutral-800'
+  if (value > 0.004) return 'text-emerald-400'
+  if (value < -0.004) return 'text-red-400'
+  return 'text-gold-soft'
 }
 
 export function StocksPage() {
@@ -93,13 +93,13 @@ export function StocksPage() {
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('app.navStocks')}</h1>
+        <h1 className="text-2xl font-bold text-heading">{t('app.navStocks')}</h1>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" className="rounded-xl" disabled={quotesLoading} onClick={() => void refresh()}>
             <RefreshCw className={quotesLoading ? 'animate-spin' : undefined} />
             {t('stocks.refresh')}
           </Button>
-          <Button type="button" className="rounded-xl" onClick={() => setAddOpen(true)}>
+          <Button type="button" variant="stock" className="rounded-xl" onClick={() => setAddOpen(true)}>
             <Plus />
             {t('stocks.add')}
           </Button>
@@ -109,14 +109,14 @@ export function StocksPage() {
       {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {quotesError ? <p className="text-sm text-amber-700">{t('stocks.quoteUnavailable')}</p> : null}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm text-neutral-500">{t('stocks.totalValue')}</p>
-          <p className="text-xl font-semibold text-neutral-900">
+        <div className="rounded-2xl border border-stock/30 bg-gradient-to-br from-navy to-navy-mid p-4">
+          <p className="text-sm text-stock-soft">{t('stocks.totalValue')}</p>
+          <p className="text-xl font-semibold text-white">
             <MoneyText amount={totalMarket} lang={lang} currency={defaultCurrency} />
           </p>
         </div>
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm text-neutral-500">{t('stocks.unrealized')}</p>
+        <div className="rounded-2xl border border-stock/30 bg-gradient-to-br from-navy to-navy-mid p-4">
+          <p className="text-sm text-stock-soft">{t('stocks.unrealized')}</p>
           <p className={`text-xl font-semibold ${pnlClass(totalPnl)}`}>
             <MoneyText amount={totalPnl} lang={lang} currency={defaultCurrency} />
             {totalWinRatio == null ? '' : ` (${totalWinRatio >= 0 ? '+' : ''}${totalWinRatio.toFixed(1)}%)`}
@@ -145,7 +145,7 @@ export function StocksPage() {
         })}
       </ul>
       {!loading && holdings.length === 0 ? (
-        <p className="text-sm text-neutral-500">{t('stocks.empty')}</p>
+        <p className="text-sm text-muted">{t('stocks.empty')}</p>
       ) : null}
       <ConfirmDialog
         open={deleteHoldingId != null}

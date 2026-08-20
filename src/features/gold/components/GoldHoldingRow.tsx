@@ -32,13 +32,13 @@ export function GoldHoldingRow({
   const value = estimateGoldValue(item.grams, item.karat, prices)
 
   return (
-    <li className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+    <li className="space-y-3 rounded-2xl border border-gold-soft/80 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">
             {item.karat}K · {item.grams} g
           </p>
-          {item.note ? <p className="text-sm text-neutral-500">{item.note}</p> : null}
+          {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
         </div>
         <Button
           type="button"
@@ -52,20 +52,20 @@ export function GoldHoldingRow({
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2 text-center">
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('gold.weight')}</p>
+        <div className="rounded-xl bg-gold-soft/30 p-2">
+          <p className="text-xs text-muted">{t('gold.weight')}</p>
           <p className="font-semibold">{weight == null ? '—' : `${weight.toFixed(1)}%`}</p>
         </div>
-        <div className="rounded-xl bg-neutral-50 p-2">
-          <p className="text-xs text-neutral-500">{t('gold.totalMoney')}</p>
+        <div className="rounded-xl bg-gold-soft/30 p-2">
+          <p className="text-xs text-muted">{t('gold.totalMoney')}</p>
           <p className="text-sm font-semibold">
             {value == null ? '—' : <MoneyText amount={value} lang={lang} currency={defaultCurrency} />}
           </p>
         </div>
       </div>
       {weight != null ? (
-        <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
-          <div className="h-full rounded-full bg-[#c9a227]" style={{ width: `${Math.min(weight, 100)}%` }} />
+        <div className="h-1.5 overflow-hidden rounded-full bg-gold-soft/40">
+          <div className="h-full rounded-full bg-gold" style={{ width: `${Math.min(weight, 100)}%` }} />
         </div>
       ) : null}
       <div className="flex gap-2">

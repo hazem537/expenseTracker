@@ -33,19 +33,19 @@ export function SettingsPage() {
   return (
     <div className="space-y-4">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
-      <h1 className="text-2xl font-bold">{t('app.navSettings')}</h1>
+      <h1 className="text-2xl font-bold text-heading">{t('app.navSettings')}</h1>
       {loading ? <p>{t('app.loading')}</p> : null}
       {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {profile ? (
-        <form className="space-y-4 rounded-2xl bg-white p-5 shadow-sm" onSubmit={(e) => void handleSubmit(e)}>
+        <form className="space-y-4 rounded-2xl border border-gold-soft/70 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.08)]" onSubmit={(e) => void handleSubmit(e)}>
           <div>
-            <label className="block text-sm font-medium text-slate-700" htmlFor="base-cur">
+            <label className="block text-sm font-medium text-heading" htmlFor="base-cur">
               {t('settings.defaultCurrency')}
             </label>
-            <p className="mt-1 text-sm text-slate-500">{t('settings.defaultCurrencyHelp')}</p>
+            <p className="mt-1 text-sm text-muted">{t('settings.defaultCurrencyHelp')}</p>
             <select
               id="base-cur"
-              className="mt-2 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-base"
+              className="mt-2 min-h-12 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base"
               value={currency}
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
             >
@@ -60,7 +60,7 @@ export function SettingsPage() {
           <button
             type="submit"
             disabled={busy}
-            className="min-h-12 w-full rounded-xl bg-slate-900 font-semibold text-white disabled:opacity-60"
+            className="min-h-12 w-full rounded-xl bg-navy font-semibold text-gold-bright disabled:opacity-60"
           >
             {t('app.save')}
           </button>
@@ -70,7 +70,7 @@ export function SettingsPage() {
       <InstallAppCard />
       <button
         type="button"
-        className="min-h-12 w-full rounded-xl border border-[#c6c6cd] bg-white font-medium text-[#45464d] md:hidden"
+        className="min-h-12 w-full rounded-xl border border-gold-soft bg-surface font-medium text-muted md:hidden"
         onClick={() => {
           void supabase?.auth.signOut()
         }}

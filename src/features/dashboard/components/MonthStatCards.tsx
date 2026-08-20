@@ -15,14 +15,14 @@ export function MonthStatCards({ totalSpent, expenseCount, currency, lang }: Mon
   return (
     <div className="flex gap-4">
       <article className={`${dashboardCard} min-w-0 flex-1 rounded-xl p-[17px]`}>
-        <p className="text-sm leading-5 text-[#45464d]">{t('dashboard.totalSpent')}</p>
-        <p className="mt-1 text-xl font-bold leading-7 text-black">
+        <p className="text-sm leading-5 text-muted">{t('dashboard.totalSpent')}</p>
+        <p className="mt-1 text-xl font-bold leading-7 text-heading">
           <MoneyText amount={totalSpent} lang={lang} currency={currency} ledger />
         </p>
       </article>
       <article className={`${dashboardCard} min-w-0 flex-1 rounded-xl p-[17px]`}>
-        <p className="text-sm leading-5 text-[#45464d]">{t('dashboard.count')}</p>
-        <p className="mt-1 text-xl font-bold leading-7 text-black">{expenseCount}</p>
+        <p className="text-sm leading-5 text-muted">{t('dashboard.count')}</p>
+        <p className="mt-1 text-xl font-bold leading-7 text-heading">{expenseCount}</p>
       </article>
     </div>
   )

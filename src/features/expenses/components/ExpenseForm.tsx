@@ -17,7 +17,7 @@ interface ExpenseFormProps {
 }
 
 const selectClass =
-  'mt-1 flex h-11 w-full rounded-xl border border-neutral-200 bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-neutral-400'
+  'mt-1 flex h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-gold'
 
 export function ExpenseForm({
   initial,

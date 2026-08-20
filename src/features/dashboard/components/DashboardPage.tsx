@@ -38,7 +38,7 @@ export function DashboardPage() {
         lang={lang}
         onAddExpense={() => setAddOpen(true)}
       />
-      {loading ? <p className="text-sm text-[#45464d]">{t('app.loading')}</p> : null}
+      {loading ? <p className="text-sm text-muted">{t('app.loading')}</p> : null}
       {error ? <p className="text-sm text-red-600">{t('expense.error')}</p> : null}
       <AccountStrip
         accounts={accounts}
@@ -56,7 +56,7 @@ export function DashboardPage() {
         lang={lang}
       />
       {!loading ? (
-        <Suspense fallback={<p className="text-sm text-[#45464d]">{t('app.loading')}</p>}>
+        <Suspense fallback={<p className="text-sm text-muted">{t('app.loading')}</p>}>
           <DashboardCharts expenses={expenses} year={range.year} monthIndex={range.month} />
         </Suspense>
       ) : null}

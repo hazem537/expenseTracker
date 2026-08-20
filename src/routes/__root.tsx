@@ -19,7 +19,7 @@ function RootLayout() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#fcf8fa] text-black">
+    <div className="app-shell min-h-dvh text-ink">
       <AppHeader
         signedIn
         onSignOut={() => {

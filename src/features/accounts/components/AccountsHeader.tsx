@@ -13,7 +13,7 @@ export function AccountsHeader({ onAddAccount, onTransfer, canTransfer }: Accoun
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-2xl font-bold">{t('app.navAccounts')}</h1>
+      <h1 className="text-2xl font-bold text-heading">{t('app.navAccounts')}</h1>
       <div className="flex gap-2">
         {canTransfer ? (
           <Button type="button" variant="outline" className="rounded-xl" onClick={onTransfer}>

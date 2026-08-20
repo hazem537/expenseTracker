@@ -18,7 +18,7 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around rounded-t-xl bg-white px-2 shadow-[0px_-1px_1.5px_rgba(15,23,42,0.03)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around rounded-t-xl border-t border-gold/40 bg-navy px-2 pb-[env(safe-area-inset-bottom)] md:hidden">
       {items.map((item) => {
         const isActive = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)
         const Icon = item.icon
@@ -28,13 +28,12 @@ export function BottomNav() {
             key={item.to}
             to={item.to}
             aria-label={label}
-            title={label}
             className={cn(
               'flex size-11 items-center justify-center rounded-full',
-              isActive && 'bg-[#131b2e]',
+              isActive && 'bg-gold/20',
             )}
           >
-            <Icon className={cn('size-5', isActive ? 'text-white' : 'text-[#45464d]')} />
+            <Icon className={cn('size-5', isActive ? 'text-gold-bright' : 'text-ivory')} />
           </Link>
         )
       })}

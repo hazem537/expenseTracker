@@ -60,18 +60,18 @@ export function DashboardCharts({ expenses, year, monthIndex }: DashboardChartsP
   const midDay = Math.round((lastDay + 1) / 2)
 
   const card =
-    'w-full rounded-xl border border-[#c6c6cd] bg-white p-6 shadow-[0px_1px_1.5px_rgba(15,23,42,0.03),0px_10px_10px_rgba(15,23,42,0.05)]'
+    'w-full rounded-xl border border-gold-soft/80 bg-surface p-6 shadow-[0_12px_28px_rgba(201,162,39,0.1)]'
 
   if (expenses.length === 0) {
-    return <p className={`${card} text-[#45464d]`}>{t('dashboard.emptyChart')}</p>
+    return <p className={`${card} text-muted`}>{t('dashboard.emptyChart')}</p>
   }
 
   return (
     <div className="flex flex-col gap-4">
       <section className={card}>
-        <h2 className="mb-4 text-xl font-semibold leading-7 text-black">{t('dashboard.byCategory')}</h2>
+        <h2 className="mb-4 text-xl font-semibold leading-7 text-heading">{t('dashboard.byCategory')}</h2>
         {categoryRows.length === 0 ? (
-          <p className="text-[#45464d]">{t('dashboard.emptyChart')}</p>
+          <p className="text-muted">{t('dashboard.emptyChart')}</p>
         ) : (
           <>
             <div className="flex h-44 items-center justify-center pb-4">
@@ -79,7 +79,7 @@ export function DashboardCharts({ expenses, year, monthIndex }: DashboardChartsP
                 <div
                   className="absolute inset-0 rounded-full"
                   style={{
-                    background: '#eae7e9',
+                    background: '#ead9a8',
                     WebkitMask:
                       'radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15.5px))',
                     mask: 'radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15.5px))',
@@ -97,11 +97,11 @@ export function DashboardCharts({ expenses, year, monthIndex }: DashboardChartsP
                   aria-hidden
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-xl font-semibold leading-7 text-black">100%</p>
+                  <p className="text-xl font-semibold leading-7 text-heading">100%</p>
                 </div>
               </div>
             </div>
-            <ul className="flex flex-wrap items-center justify-center gap-2 text-sm leading-5 text-[#1b1b1d]">
+            <ul className="flex flex-wrap items-center justify-center gap-2 text-sm leading-5 text-ink">
               {categoryRows.map((row) => (
                 <li key={row.category} className="flex items-center gap-1">
                   <span
@@ -116,18 +116,18 @@ export function DashboardCharts({ expenses, year, monthIndex }: DashboardChartsP
         )}
       </section>
       <section className={`${card} flex flex-col`}>
-        <h2 className="mb-4 text-xl font-semibold leading-7 text-black">{t('dashboard.byDay')}</h2>
+        <h2 className="mb-4 text-xl font-semibold leading-7 text-heading">{t('dashboard.byDay')}</h2>
         <div className="flex h-40 w-full items-end justify-between gap-px" role="img" aria-label={t('dashboard.byDay')}>
           {dayRows.map((row) => (
             <div
               key={row.day}
-              className="min-w-0 flex-1 rounded-t-[2px] bg-black"
+              className="min-w-0 flex-1 rounded-t-[2px] bg-navy"
               style={{ height: maxDay > 0 ? `${Math.max((row.total / maxDay) * 90, row.total > 0 ? 4 : 0)}%` : 0 }}
               title={`${row.day}: ${row.total}`}
             />
           ))}
         </div>
-        <div className="flex items-start justify-between pt-2 text-xs font-semibold leading-4 tracking-[0.6px] text-[#45464d]">
+        <div className="flex items-start justify-between pt-2 text-xs font-semibold leading-4 tracking-[0.6px] text-muted">
           <span>1</span>
           <span>{midDay}</span>
           <span>{lastDay}</span>

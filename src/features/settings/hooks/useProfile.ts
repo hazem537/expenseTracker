@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchKaratPricesInCurrency, type Karat, type KaratPrices } from '@/features/gold/lib/gold'
+import { fetchKaratPricesInCurrency, type KaratPrices } from '@/features/gold/lib/gold'
 import type { CurrencyCode } from '@/shared/lib/currencies'
 import { supabase } from '@/shared/lib/supabase'
 

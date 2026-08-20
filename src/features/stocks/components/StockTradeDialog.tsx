@@ -18,7 +18,6 @@ import {
   normalizeSymbol,
   type StockQuote,
 } from '@/features/stocks/lib/quote'
-import { formatAmount } from '@/shared/lib/format'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const selectClass =

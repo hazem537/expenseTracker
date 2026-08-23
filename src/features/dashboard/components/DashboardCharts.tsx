@@ -67,22 +67,28 @@ export function DashboardCharts({ expenses, year, monthIndex, lang, currency }: 
     }))
   }, [expenses, monthIndex, year])
 
-  const maxDay = Math.max(...dayRows.map((row) => row.total), 0)
-  const lastDay = dayRows.length
-  const midDay = Math.round((lastDay + 1) / 2)
-  const peak = dayRows.reduce((best, row) => (row.total > best.total ? row : best), dayRows[0])
+  const dayStats = useMemo(() => {
+    const maxDay = Math.max(...dayRows.map((row) => row.total), 0)
+    const lastDay = dayRows.length
+    const midDay = Math.round((lastDay + 1) / 2)
+    const peak = dayRows.reduce((best, row) => (row.total > best.total ? row : best), dayRows[0])
+    return { maxDay, lastDay, midDay, peak }
+  }, [dayRows])
+
   const now = new Date()
   const todayDay =
     now.getFullYear() === year && now.getMonth() === monthIndex ? now.getDate() : null
   const topShare = categoryTotal > 0 ? (categoryRows[0].total / categoryTotal) * 100 : 0
+  const { maxDay, lastDay, midDay, peak } = dayStats
 
   const card =
     'w-full rounded-2xl border border-gold-soft/80 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.1)] sm:p-6'
 
+  // Presentational only: data comes from parent hooks. Three UI states — empty / charts.
   if (expenses.length === 0) {
     return (
       <div className={`${card} flex flex-col items-center gap-2 py-10 text-center`}>
-        <span className="flex size-12 items-center justify-center rounded-full bg-gold-soft/40 text-gold">
+        <span className="flex size-12 items-center justify-center rounded-full bg-gold-soft/40 text-gold" aria-hidden>
           <PieChart className="size-6" />
         </span>
         <p className="text-sm text-muted">{t('dashboard.emptyChart')}</p>

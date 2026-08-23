@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Karat, KaratPrices } from '@/features/gold/lib/gold'
+import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
 export interface GoldHolding {
@@ -17,44 +18,37 @@ export interface GoldHoldingInput {
   note: string
 }
 
+async function fetchGoldHoldings(): Promise<GoldHolding[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('gold_holdings')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => ({
+    ...row,
+    grams: Number(row.grams),
+    karat: Number(row.karat) as Karat,
+  })) as GoldHolding[]
+}
+
 export function useGoldHoldings() {
-  const [holdings, setHoldings] = useState<GoldHolding[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const reload = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    const { data, error: queryError } = await supabase
-      .from('gold_holdings')
-      .select('*')
-      .order('created_at', { ascending: false })
+  const query = useQuery({
+    queryKey: queryKeys.gold.holdings,
+    queryFn: fetchGoldHoldings,
+    networkMode: 'offlineFirst',
+  })
 
-    if (queryError) {
-      setError(queryError.message)
-      setHoldings([])
-    } else {
-      setHoldings(
-        (data ?? []).map((row) => ({
-          ...row,
-          grams: Number(row.grams),
-          karat: Number(row.karat) as Karat,
-        })) as GoldHolding[],
-      )
-    }
-    setLoading(false)
-  }, [])
+  const holdings = query.data ?? []
 
-  useEffect(() => {
-    void reload()
-  }, [reload])
+  async function invalidateGold() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.gold.all })
+  }
 
-  const createHolding = useCallback(
-    async (input: GoldHoldingInput) => {
+  const createHolding = useMutation({
+    mutationFn: async (input: GoldHoldingInput) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const {
         data: { user },
@@ -67,13 +61,12 @@ export function useGoldHoldings() {
         note: input.note.trim() || null,
       })
       if (insertError) throw insertError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: invalidateGold,
+  })
 
-  const reduceHolding = useCallback(
-    async (id: string, gramsToRemove: number) => {
+  const reduceHolding = useMutation({
+    mutationFn: async ({ id, gramsToRemove }: { id: string; gramsToRemove: number }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const holding = holdings.find((item) => item.id === id)
       if (!holding) throw new Error('Holding not found')
@@ -88,13 +81,12 @@ export function useGoldHoldings() {
           .eq('id', id)
         if (updateError) throw updateError
       }
-      await reload()
     },
-    [holdings, reload],
-  )
+    onSuccess: invalidateGold,
+  })
 
-  const addGrams = useCallback(
-    async (input: { karat: Karat; grams: number; note?: string }) => {
+  const addGrams = useMutation({
+    mutationFn: async (input: { karat: Karat; grams: number; note?: string }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const existing = holdings.find((item) => item.karat === input.karat)
       if (existing) {
@@ -105,37 +97,45 @@ export function useGoldHoldings() {
           .eq('id', existing.id)
         if (updateError) throw updateError
       } else {
-        await createHolding({
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not signed in')
+        const { error: insertError } = await supabase.from('gold_holdings').insert({
+          user_id: user.id,
           grams: input.grams,
           karat: input.karat,
-          note: input.note ?? '',
+          note: (input.note ?? '').trim() || null,
         })
-        return
+        if (insertError) throw insertError
       }
-      await reload()
     },
-    [holdings, reload, createHolding],
-  )
+    onSuccess: invalidateGold,
+  })
 
-  const deleteHolding = useCallback(
-    async (id: string) => {
+  const deleteHolding = useMutation({
+    mutationFn: async (id: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const { error: deleteError } = await supabase.from('gold_holdings').delete().eq('id', id)
       if (deleteError) throw deleteError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: invalidateGold,
+  })
+
+  const reload = async () => {
+    await invalidateGold()
+  }
 
   return {
     holdings,
-    loading,
-    error,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
     reload,
-    createHolding,
-    addGrams,
-    reduceHolding,
-    deleteHolding,
+    createHolding: (input: GoldHoldingInput) => createHolding.mutateAsync(input),
+    addGrams: (input: { karat: Karat; grams: number; note?: string }) => addGrams.mutateAsync(input),
+    reduceHolding: (id: string, gramsToRemove: number) =>
+      reduceHolding.mutateAsync({ id, gramsToRemove }),
+    deleteHolding: (id: string) => deleteHolding.mutateAsync(id),
   }
 }
 

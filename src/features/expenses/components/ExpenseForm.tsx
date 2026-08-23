@@ -14,10 +14,11 @@ interface ExpenseFormProps {
   defaultCurrency: CurrencyCode
   onSubmit: (input: ExpenseInput) => Promise<void>
   onCancel: () => void
+  onBusyChange?: (busy: boolean) => void
 }
 
 const selectClass =
-  'mt-1 flex h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-gold'
+  'mt-1 flex h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-gold disabled:opacity-60'
 
 export function ExpenseForm({
   initial,
@@ -25,6 +26,7 @@ export function ExpenseForm({
   defaultCurrency,
   onSubmit,
   onCancel,
+  onBusyChange,
 }: ExpenseFormProps) {
   const { t } = useTranslation()
   const [accountId, setAccountId] = useState(initial?.account_id ?? accounts[0]?.id ?? '')
@@ -45,15 +47,21 @@ export function ExpenseForm({
     if (!needsFx) setAmountBase(amount)
   }, [amount, needsFx])
 
+  function setBusy(next: boolean) {
+    setSaving(next)
+    onBusyChange?.(next)
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (saving) return
     const value = Number(amount)
     const base = needsFx ? Number(amountBase) : value
     if (!accountId || !Number.isFinite(value) || value <= 0 || !Number.isFinite(base) || base <= 0) {
       setError(t('expense.error'))
       return
     }
-    setSaving(true)
+    setBusy(true)
     setError(null)
     try {
       await onSubmit({
@@ -65,13 +73,15 @@ export function ExpenseForm({
         occurred_on: occurredOn,
         note,
       })
+      // Success: parent closes the dialog. Clear loading immediately.
+      setBusy(false)
     } catch (err) {
       setError(
         err instanceof Error && err.message === 'Insufficient funds'
           ? t('accounts.insufficient')
           : t('expense.error'),
       )
-      setSaving(false)
+      setBusy(false)
     }
   }
 
@@ -87,6 +97,7 @@ export function ExpenseForm({
           id="account"
           className={selectClass}
           value={accountId}
+          disabled={saving}
           onChange={(e) => setAccountId(e.target.value)}
         >
           {accounts.map((item) => (
@@ -107,6 +118,7 @@ export function ExpenseForm({
           step="0.01"
           inputMode="decimal"
           required
+          disabled={saving}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
@@ -121,6 +133,7 @@ export function ExpenseForm({
             step="0.01"
             inputMode="decimal"
             required
+            disabled={saving}
             value={amountBase}
             onChange={(e) => setAmountBase(e.target.value)}
           />
@@ -132,6 +145,7 @@ export function ExpenseForm({
           id="category"
           className={selectClass}
           value={category}
+          disabled={saving}
           onChange={(e) => setCategory(e.target.value as Category)}
         >
           {CATEGORIES.map((key) => (
@@ -147,6 +161,7 @@ export function ExpenseForm({
           id="date"
           type="date"
           required
+          disabled={saving}
           value={occurredOn}
           onChange={(e) => setOccurredOn(e.target.value)}
         />
@@ -156,14 +171,26 @@ export function ExpenseForm({
           {t('expense.note')}{' '}
           <span className="font-normal text-neutral-400">({t('expense.noteOptional')})</span>
         </Label>
-        <Input id="note" type="text" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Input
+          id="note"
+          type="text"
+          disabled={saving}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
         <Button type="submit" disabled={saving} className="min-h-11 flex-1 rounded-xl">
-          {t('app.save')}
+          {saving ? t('app.loading') : t('app.save')}
         </Button>
-        <Button type="button" variant="secondary" className="min-h-11 rounded-xl" onClick={onCancel}>
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-11 rounded-xl"
+          disabled={saving}
+          onClick={onCancel}
+        >
           {t('app.cancel')}
         </Button>
       </div>

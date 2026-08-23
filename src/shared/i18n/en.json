@@ -13,6 +13,8 @@
     "confirmTitle": "Are you sure?",
     "edit": "Edit",
     "add": "Add expense",
+    "close": "Close",
+    "skipToContent": "Skip to content",
     "navDashboard": "Dashboard",
     "navSummary": "Summary",
     "navExpenses": "Expenses",
@@ -22,6 +24,16 @@
     "navSettings": "Settings",
     "setupTitle": "Connect Supabase",
     "setupBody": "Copy .env.example to .env, add your project URL and anon key, then restart the app."
+  },
+  "offline": {
+    "banner": "You are offline. Viewing saved data. New expenses will sync when you reconnect.",
+    "pendingOne": "1 expense waiting to sync…",
+    "pendingMany": "{{count}} expenses waiting to sync…",
+    "navDisabled": "Unavailable offline",
+    "actionDisabled": "Connect to the internet to use this",
+    "pendingBadge": "Pending sync",
+    "needCache": "Connect once online to load your data, then you can view it offline.",
+    "pageUnavailable": "This section needs a network connection for live prices or trading."
   },
   "lang": {
     "ar": "AR",
@@ -94,7 +106,7 @@
     "defaultCurrencyHelp": "Dashboard totals use this currency. When you spend from another currency, enter what it equals in this one.",
     "saved": "Saved.",
     "installTitle": "Install on your phone",
-    "installBody": "Add bankKhana to your home screen. It opens like an app and keeps the last screen for offline use.",
+    "installBody": "Add bankKhana to your home screen. Offline you can view saved accounts and expenses, and queue new expenses to sync when you are back online.",
     "installAction": "Install",
     "installIos": "On iPhone: tap Share, then Add to Home Screen.",
     "installAndroid": "On Android Chrome: open the menu, then Install app or Add to Home screen."

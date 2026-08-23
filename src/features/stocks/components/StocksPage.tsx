@@ -10,6 +10,7 @@ import { StockTradeDialog, type StockTradeSide } from '@/features/stocks/compone
 import { useStockHoldings } from '@/features/stocks/hooks/useStockHoldings'
 import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
+import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -23,6 +24,7 @@ function pnlClass(value: number) {
 
 export function StocksPage() {
   const { t, i18n } = useTranslation()
+  const online = useOnlineStatus()
   const lang = i18n.language
   const { profile } = useProfile()
   const { accounts, addMoney, spendMoney } = useAccounts()
@@ -92,14 +94,33 @@ export function StocksPage() {
   return (
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
+      {!online ? (
+        <p className="rounded-xl border border-amber-300/80 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100" role="status">
+          {t('offline.pageUnavailable')}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-heading dark:text-ivory">{t('app.navStocks')}</h1>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" className="rounded-xl" disabled={quotesLoading} onClick={() => void refresh()}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            disabled={!online || quotesLoading}
+            title={!online ? t('offline.actionDisabled') : undefined}
+            onClick={() => void refresh()}
+          >
             <RefreshCw className={quotesLoading ? 'animate-spin' : undefined} />
             {t('stocks.refresh')}
           </Button>
-          <Button type="button" variant="stock" className="rounded-xl" onClick={() => setAddOpen(true)}>
+          <Button
+            type="button"
+            variant="stock"
+            className="rounded-xl"
+            disabled={!online}
+            title={!online ? t('offline.actionDisabled') : undefined}
+            onClick={() => setAddOpen(true)}
+          >
             <Plus />
             {t('stocks.add')}
           </Button>
@@ -136,7 +157,8 @@ export function StocksPage() {
               weight={weight}
               lang={lang}
               defaultCurrency={defaultCurrency}
-              canTrade={accounts.length > 0}
+              canTrade={online && accounts.length > 0}
+              canDelete={online}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
               onDelete={() => setDeleteHoldingId(item.id)}

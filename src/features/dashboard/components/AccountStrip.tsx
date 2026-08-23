@@ -11,6 +11,7 @@ interface AccountStripProps {
   accounts: Account[]
   lang: string
   defaultCurrency: CurrencyCode
+  createDisabled?: boolean
   onCreateAccount: (values: AccountFormValues) => Promise<void>
 }
 
@@ -18,6 +19,7 @@ export function AccountStrip({
   accounts,
   lang,
   defaultCurrency,
+  createDisabled = false,
   onCreateAccount,
 }: AccountStripProps) {
   const { t } = useTranslation()
@@ -30,7 +32,7 @@ export function AccountStrip({
         {accounts.map((item) => (
           <AccountCard key={item.id} account={item} lang={lang} />
         ))}
-        <AddAccountCard onClick={() => setOpen(true)} />
+        {!createDisabled ? <AddAccountCard onClick={() => setOpen(true)} /> : null}
       </div>
       <AccountFormDialog
         open={open}

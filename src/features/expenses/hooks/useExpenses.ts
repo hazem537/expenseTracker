@@ -1,5 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Category } from '@/features/expenses/lib/categories'
+import { createExpenseOnServer } from '@/shared/lib/flushOutbox'
+import { isOnline } from '@/shared/lib/online'
+import {
+  enqueueCreateExpense,
+  getOutboxPendingIds,
+  refreshOutboxCount,
+  subscribeOutbox,
+} from '@/shared/lib/outbox'
+import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
 export interface Expense {
@@ -13,6 +23,7 @@ export interface Expense {
   occurred_on: string
   note: string | null
   created_at: string
+  pending?: boolean
 }
 
 export interface ExpenseInput {
@@ -53,63 +64,67 @@ function mapExpense(row: Record<string, unknown>): Expense {
   }
 }
 
+async function fetchExpenses(range?: { start: string; end: string }): Promise<Expense[]> {
+  if (!supabase) return []
+
+  let query = supabase
+    .from('expenses')
+    .select('*')
+    .order('occurred_on', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (range) {
+    query = query.gte('occurred_on', range.start).lte('occurred_on', range.end)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return (data ?? []).map((row) => mapExpense(row as Record<string, unknown>))
+}
+
+function mergePendingFlags(expenses: Expense[], pendingIds: Set<string>): Expense[] {
+  return expenses.map((item) => (pendingIds.has(item.id) ? { ...item, pending: true } : item))
+}
+
 export function useExpenses(range?: { start: string; end: string }) {
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const reload = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    let query = supabase
-      .from('expenses')
-      .select('*')
-      .order('occurred_on', { ascending: false })
-      .order('created_at', { ascending: false })
-
-    if (range) {
-      query = query.gte('occurred_on', range.start).lte('occurred_on', range.end)
-    }
-
-    const { data, error: queryError } = await query
-
-    if (queryError) {
-      setError(queryError.message)
-      setExpenses([])
-    } else {
-      setExpenses((data ?? []).map((row) => mapExpense(row as Record<string, unknown>)))
-    }
-    setLoading(false)
-  }, [range?.end, range?.start])
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.expenses.list(range)
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
-    void reload()
-  }, [reload])
+    let cancelled = false
+    async function loadPending() {
+      const ids = await getOutboxPendingIds()
+      if (!cancelled) setPendingIds(ids)
+    }
+    void loadPending()
+    return subscribeOutbox(() => {
+      void loadPending()
+    })
+  }, [])
 
-  const createExpense = useCallback(
-    async (input: ExpenseInput) => {
-      if (!supabase) throw new Error('Supabase is not configured')
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not signed in')
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchExpenses(range),
+    networkMode: 'offlineFirst',
+  })
 
-      const { data: account, error: accountError } = await supabase
-        .from('accounts')
-        .select('balance')
-        .eq('id', input.account_id)
-        .single()
-      if (accountError || !account) throw accountError ?? new Error('Account not found')
-      if (Number(account.balance) < input.amount) throw new Error('Insufficient funds')
+  const expenses = mergePendingFlags(query.data ?? [], pendingIds)
 
-      const { error: insertError } = await supabase.from('expenses').insert({
-        user_id: user.id,
+  async function invalidateRelated() {
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+    ])
+  }
+
+  async function createExpense(input: ExpenseInput) {
+    if (!isOnline()) {
+      const item = await enqueueCreateExpense(input)
+      await refreshOutboxCount()
+      const optimistic: Expense = {
+        id: item.id,
+        user_id: 'local',
         account_id: input.account_id,
         amount: input.amount,
         amount_base: input.amount_base,
@@ -117,19 +132,26 @@ export function useExpenses(range?: { start: string; end: string }) {
         category: input.category,
         occurred_on: input.occurred_on,
         note: input.note.trim() || null,
+        created_at: item.createdAt,
+        pending: true,
+      }
+      queryClient.setQueriesData<Expense[]>({ queryKey: queryKeys.expenses.all }, (prev) => {
+        if (!prev) return [optimistic]
+        return [optimistic, ...prev]
       })
-      if (insertError) throw insertError
-      await adjustBalance(input.account_id, -input.amount)
-      await reload()
-    },
-    [reload],
-  )
+      return
+    }
+    await createExpenseOnServer(input)
+    invalidateRelated()
+  }
 
-  const updateExpense = useCallback(
-    async (id: string, input: ExpenseInput) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: ExpenseInput }) => {
+      if (!isOnline()) throw new Error('OFFLINE')
       if (!supabase) throw new Error('Supabase is not configured')
       const previous = expenses.find((item) => item.id === id)
       if (!previous) throw new Error('Expense not found')
+      if (previous.pending) throw new Error('OFFLINE')
 
       await adjustBalance(previous.account_id, previous.amount)
 
@@ -164,22 +186,41 @@ export function useExpenses(range?: { start: string; end: string }) {
         throw updateError
       }
       await adjustBalance(input.account_id, -input.amount)
-      await reload()
     },
-    [expenses, reload],
-  )
+    onSuccess: () => {
+      invalidateRelated()
+    },
+  })
 
-  const deleteExpense = useCallback(
-    async (id: string) => {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!isOnline()) throw new Error('OFFLINE')
       if (!supabase) throw new Error('Supabase is not configured')
       const previous = expenses.find((item) => item.id === id)
+      if (previous?.pending) throw new Error('OFFLINE')
       const { error: deleteError } = await supabase.from('expenses').delete().eq('id', id)
       if (deleteError) throw deleteError
       if (previous?.account_id) await adjustBalance(previous.account_id, previous.amount)
-      await reload()
     },
-    [expenses, reload],
-  )
+    onSuccess: () => {
+      invalidateRelated()
+    },
+  })
 
-  return { expenses, loading, error, reload, createExpense, updateExpense, deleteExpense }
+  const reload = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+    ])
+  }
+
+  return {
+    expenses,
+    loading: query.isLoading && !query.data,
+    error: query.error ? (query.error as Error).message : null,
+    reload,
+    createExpense,
+    updateExpense: (id: string, input: ExpenseInput) => updateMutation.mutateAsync({ id, input }),
+    deleteExpense: (id: string) => deleteMutation.mutateAsync(id),
+  }
 }

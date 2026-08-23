@@ -8,6 +8,7 @@ import { MonthStatCards } from '@/features/dashboard/components/MonthStatCards'
 import { ExpenseFormDialog, useExpenses } from '@/features/expenses'
 import { useProfile } from '@/features/settings'
 import { monthRange } from '@/shared/lib/format'
+import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
@@ -17,10 +18,11 @@ const DashboardCharts = lazy(() =>
 
 export function DashboardPage() {
   const { t, i18n } = useTranslation()
+  const online = useOnlineStatus()
   const range = monthRange()
   const { profile } = useProfile()
-  const { accounts, reload: reloadAccounts, createAccount } = useAccounts()
-  const { expenses, loading, error, createExpense, reload: reloadExpenses } = useExpenses({
+  const { accounts, createAccount } = useAccounts()
+  const { expenses, loading, error, createExpense } = useExpenses({
     start: range.start,
     end: range.end,
   })
@@ -38,15 +40,23 @@ export function DashboardPage() {
         lang={lang}
         onAddExpense={() => setAddOpen(true)}
       />
-      {loading ? <p className="text-sm text-muted">{t('app.loading')}</p> : null}
-      {error ? <p className="text-sm text-red-600">{t('expense.error')}</p> : null}
+      {loading ? (
+        <p className="text-sm text-muted" role="status">
+          {t('app.loading')}
+        </p>
+      ) : null}
+      {error && online ? (
+        <p className="text-sm text-red-600" role="alert">
+          {t('expense.error')}
+        </p>
+      ) : null}
       <AccountStrip
         accounts={accounts}
         lang={lang}
         defaultCurrency={currency}
+        createDisabled={!online}
         onCreateAccount={async (values) => {
           await createAccount(values)
-          await reloadAccounts()
         }}
       />
       <MonthStatCards
@@ -74,9 +84,6 @@ export function DashboardPage() {
         defaultCurrency={currency}
         onSubmit={async (input) => {
           await createExpense(input)
-          await reloadAccounts()
-          await reloadExpenses()
-          setAddOpen(false)
         }}
       />
     </div>

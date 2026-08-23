@@ -19,6 +19,7 @@ interface StockHoldingRowProps {
   lang: string
   defaultCurrency: string
   canTrade: boolean
+  canDelete?: boolean
   onBuy: () => void
   onSell: () => void
   onDelete: () => void
@@ -32,6 +33,7 @@ export function StockHoldingRow({
   lang,
   defaultCurrency,
   canTrade,
+  canDelete = true,
   onBuy,
   onSell,
   onDelete,
@@ -81,6 +83,7 @@ export function StockHoldingRow({
             size="icon"
             className="size-10 shrink-0 text-red-700"
             aria-label={t('app.delete')}
+            disabled={!canDelete}
             onClick={onDelete}
           >
             <Trash2 />

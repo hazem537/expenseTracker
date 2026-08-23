@@ -8,6 +8,7 @@ import { GoldHoldingRow } from '@/features/gold/components/GoldHoldingRow'
 import { GoldTradeDialog, type GoldTradeSide } from '@/features/gold/components/GoldTradeDialog'
 import { estimateGoldValue, useGoldHoldings } from '@/features/gold/hooks/useGoldHoldings'
 import { pricesFromProfile, useProfile } from '@/features/settings'
+import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -15,6 +16,7 @@ import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function GoldPage() {
   const { t, i18n } = useTranslation()
+  const online = useOnlineStatus()
   const lang = i18n.language
   const { profile, refreshGoldPricesFromApi } = useProfile()
   const { accounts, addMoney, spendMoney } = useAccounts()
@@ -28,12 +30,12 @@ export function GoldPage() {
   const fetchedDefaultPrices = useRef(false)
 
   useEffect(() => {
-    if (!profile || prices || fetchedDefaultPrices.current) return
+    if (!online || !profile || prices || fetchedDefaultPrices.current) return
     fetchedDefaultPrices.current = true
     void refreshGoldPricesFromApi().catch(() => {
       fetchedDefaultPrices.current = false
     })
-  }, [profile, prices, refreshGoldPricesFromApi])
+  }, [online, profile, prices, refreshGoldPricesFromApi])
 
   const totalGrams = useMemo(
     () => holdings.reduce((sum, item) => sum + item.grams, 0),
@@ -47,6 +49,11 @@ export function GoldPage() {
   return (
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
+      {!online ? (
+        <p className="rounded-xl border border-amber-300/80 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100" role="status">
+          {t('offline.pageUnavailable')}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-heading">{t('app.navGold')}</h1>
         <div className="flex gap-2">
@@ -54,7 +61,8 @@ export function GoldPage() {
             type="button"
             variant="outline"
             className="rounded-xl"
-            disabled={holdings.length === 0 || accounts.length === 0}
+            disabled={!online || holdings.length === 0 || accounts.length === 0}
+            title={!online ? t('offline.actionDisabled') : undefined}
             onClick={() => setTrade({ side: 'sell' })}
           >
             <TrendingDown />
@@ -64,13 +72,21 @@ export function GoldPage() {
             type="button"
             variant="outline"
             className="rounded-xl"
-            disabled={accounts.length === 0}
+            disabled={!online || accounts.length === 0}
+            title={!online ? t('offline.actionDisabled') : undefined}
             onClick={() => setTrade({ side: 'buy' })}
           >
             <TrendingUp />
             {t('gold.buy')}
           </Button>
-          <Button type="button" variant="gold" className="rounded-xl" onClick={() => setAddOpen(true)}>
+          <Button
+            type="button"
+            variant="gold"
+            className="rounded-xl"
+            disabled={!online}
+            title={!online ? t('offline.actionDisabled') : undefined}
+            onClick={() => setAddOpen(true)}
+          >
             <Plus />
             {t('gold.add')}
           </Button>
@@ -103,7 +119,8 @@ export function GoldPage() {
               weight={weight}
               lang={lang}
               defaultCurrency={defaultCurrency}
-              canTrade={accounts.length > 0 && prices != null}
+              canTrade={online && accounts.length > 0 && prices != null}
+              canDelete={online}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
               onDelete={() => setDeleteHoldingId(item.id)}

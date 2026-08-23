@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchKaratPricesInCurrency, type KaratPrices } from '@/features/gold/lib/gold'
 import type { CurrencyCode } from '@/shared/lib/currencies'
+import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
 export interface Profile {
@@ -37,76 +38,63 @@ export function pricesFromProfile(profile: Profile | null): KaratPrices | null {
   }
 }
 
-export function useProfile() {
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+async function fetchProfile(): Promise<Profile | null> {
+  if (!supabase) return null
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
 
-  const reload = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      setProfile(null)
-      setLoading(false)
-      return
-    }
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle()
 
-    const { data, error: queryError } = await supabase
+  if (error) throw error
+
+  if (!data) {
+    const { data: created, error: insertError } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle()
+      .insert({ user_id: user.id, default_currency: 'USD' })
+      .select()
+      .single()
+    if (insertError) throw insertError
+    return mapProfile(created as Record<string, unknown>)
+  }
 
-    if (queryError) {
-      setError(queryError.message)
-      setLoading(false)
-      return
-    }
+  return mapProfile(data as Record<string, unknown>)
+}
 
-    if (!data) {
-      const { data: created, error: insertError } = await supabase
-        .from('profiles')
-        .insert({ user_id: user.id, default_currency: 'USD' })
-        .select()
-        .single()
-      if (insertError) {
-        setError(insertError.message)
-        setLoading(false)
-        return
-      }
-      setProfile(mapProfile(created as Record<string, unknown>))
-    } else {
-      setProfile(mapProfile(data as Record<string, unknown>))
-    }
-    setLoading(false)
-  }, [])
+export function useProfile() {
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    void reload()
-  }, [reload])
+  const query = useQuery({
+    queryKey: queryKeys.profile.current,
+    queryFn: fetchProfile,
+    networkMode: 'offlineFirst',
+  })
 
-  const saveDefaultCurrency = useCallback(
-    async (default_currency: CurrencyCode) => {
+  const profile = query.data ?? null
+
+  async function invalidateProfile() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.profile.all })
+  }
+
+  const saveDefaultCurrency = useMutation({
+    mutationFn: async (default_currency: CurrencyCode) => {
       if (!supabase || !profile) throw new Error('Not ready')
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ default_currency, updated_at: new Date().toISOString() })
         .eq('user_id', profile.user_id)
       if (updateError) throw updateError
-      await reload()
     },
-    [profile, reload],
-  )
+    onSuccess: invalidateProfile,
+  })
 
-  const saveGoldPrices = useCallback(
-    async (prices: KaratPrices) => {
+  const saveGoldPrices = useMutation({
+    mutationFn: async (prices: KaratPrices) => {
       if (!supabase || !profile) throw new Error('Not ready')
       const { error: updateError } = await supabase
         .from('profiles')
@@ -118,25 +106,27 @@ export function useProfile() {
         })
         .eq('user_id', profile.user_id)
       if (updateError) throw updateError
-      await reload()
     },
-    [profile, reload],
-  )
+    onSuccess: invalidateProfile,
+  })
 
-  const refreshGoldPricesFromApi = useCallback(async () => {
-    if (!profile) throw new Error('Not ready')
-    const prices = await fetchKaratPricesInCurrency(profile.default_currency)
-    await saveGoldPrices(prices)
-    return prices
-  }, [profile, saveGoldPrices])
+  const reload = async () => {
+    await invalidateProfile()
+  }
 
   return {
     profile,
-    loading,
-    error,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
     reload,
-    saveDefaultCurrency,
-    saveGoldPrices,
-    refreshGoldPricesFromApi,
+    saveDefaultCurrency: (default_currency: CurrencyCode) =>
+      saveDefaultCurrency.mutateAsync(default_currency),
+    saveGoldPrices: (prices: KaratPrices) => saveGoldPrices.mutateAsync(prices),
+    refreshGoldPricesFromApi: async () => {
+      if (!profile) throw new Error('Not ready')
+      const prices = await fetchKaratPricesInCurrency(profile.default_currency)
+      await saveGoldPrices.mutateAsync(prices)
+      return prices
+    },
   }
 }

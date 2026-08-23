@@ -6,22 +6,44 @@ interface AccountsHeaderProps {
   onAddAccount: () => void
   onTransfer: () => void
   canTransfer: boolean
+  actionsDisabled?: boolean
 }
 
-export function AccountsHeader({ onAddAccount, onTransfer, canTransfer }: AccountsHeaderProps) {
+export function AccountsHeader({
+  onAddAccount,
+  onTransfer,
+  canTransfer,
+  actionsDisabled = false,
+}: AccountsHeaderProps) {
   const { t } = useTranslation()
+  const disabledTitle = actionsDisabled ? t('offline.actionDisabled') : undefined
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-bold text-heading">{t('app.navAccounts')}</h1>
       <div className="flex gap-2">
         {canTransfer ? (
-          <Button type="button" variant="outline" className="rounded-xl" onClick={onTransfer}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            disabled={actionsDisabled}
+            title={disabledTitle}
+            aria-label={actionsDisabled ? t('offline.actionDisabled') : t('accounts.transfer')}
+            onClick={onTransfer}
+          >
             <ArrowLeftRight />
             {t('accounts.transfer')}
           </Button>
         ) : null}
-        <Button type="button" className="rounded-xl" onClick={onAddAccount}>
+        <Button
+          type="button"
+          className="rounded-xl"
+          disabled={actionsDisabled}
+          title={disabledTitle}
+          aria-label={actionsDisabled ? t('offline.actionDisabled') : t('accounts.add')}
+          onClick={onAddAccount}
+        >
           <Plus />
           {t('accounts.add')}
         </Button>

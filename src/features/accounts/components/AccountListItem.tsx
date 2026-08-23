@@ -8,6 +8,7 @@ interface AccountListItemProps {
   account: Account
   lang: string
   weight: number | null
+  actionsDisabled?: boolean
   onAddMoney: (account: Account) => void
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
@@ -17,11 +18,13 @@ export function AccountListItem({
   account,
   lang,
   weight,
+  actionsDisabled = false,
   onAddMoney,
   onEdit,
   onDelete,
 }: AccountListItemProps) {
   const { t } = useTranslation()
+  const disabledTitle = actionsDisabled ? t('offline.actionDisabled') : undefined
 
   return (
     <li className="space-y-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
@@ -35,7 +38,9 @@ export function AccountListItem({
           variant="ghost"
           size="icon"
           className="size-10 shrink-0 text-red-700"
-          aria-label={t('app.delete')}
+          aria-label={actionsDisabled ? t('offline.actionDisabled') : t('app.delete')}
+          disabled={actionsDisabled}
+          title={disabledTitle}
           onClick={() => onDelete(account)}
         >
           <Trash2 />
@@ -59,11 +64,25 @@ export function AccountListItem({
         </div>
       ) : null}
       <div className="flex gap-2">
-        <Button type="button" variant="outline" className="min-h-10 flex-1 rounded-xl" onClick={() => onAddMoney(account)}>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-10 flex-1 rounded-xl"
+          disabled={actionsDisabled}
+          title={disabledTitle}
+          onClick={() => onAddMoney(account)}
+        >
           <Plus />
           {t('accounts.addMoney')}
         </Button>
-        <Button type="button" variant="outline" className="min-h-10 flex-1 rounded-xl" onClick={() => onEdit(account)}>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-10 flex-1 rounded-xl"
+          disabled={actionsDisabled}
+          title={disabledTitle}
+          onClick={() => onEdit(account)}
+        >
           <Pencil />
           {t('app.edit')}
         </Button>

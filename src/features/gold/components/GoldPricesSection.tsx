@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { KARATS, type KaratPrices } from '@/features/gold/lib/gold'
 import { pricesFromProfile, useProfile } from '@/features/settings'
+import { useOnlineStatus } from '@/shared/lib/online'
 
 export function GoldPricesSection() {
   const { t } = useTranslation()
+  const online = useOnlineStatus()
   const { profile, saveGoldPrices, refreshGoldPricesFromApi } = useProfile()
   const [values, setValues] = useState({ 24: '', 21: '', 18: '' })
   const [saved, setSaved] = useState(false)
@@ -18,12 +20,12 @@ export function GoldPricesSection() {
   const fetchedDefault = useRef(false)
 
   useEffect(() => {
-    if (!profile || pricesFromProfile(profile) || fetchedDefault.current) return
+    if (!online || !profile || pricesFromProfile(profile) || fetchedDefault.current) return
     fetchedDefault.current = true
     void refreshGoldPricesFromApi().catch(() => {
       fetchedDefault.current = false
     })
-  }, [profile, refreshGoldPricesFromApi])
+  }, [online, profile, refreshGoldPricesFromApi])
 
   useEffect(() => {
     const prices = pricesFromProfile(profile)
@@ -99,7 +101,8 @@ export function GoldPricesSection() {
           type="button"
           variant="outline"
           className="rounded-xl"
-          disabled={refreshing}
+          disabled={!online || refreshing}
+          title={!online ? t('offline.actionDisabled') : undefined}
           onClick={() => void handleRefresh()}
         >
           <RefreshCw className={refreshing ? 'animate-spin' : undefined} />
@@ -117,6 +120,7 @@ export function GoldPricesSection() {
               step="0.0001"
               inputMode="decimal"
               required
+              disabled={!online}
               value={values[karat]}
               onChange={(e) => setValues((prev) => ({ ...prev, [karat]: e.target.value }))}
             />
@@ -125,7 +129,12 @@ export function GoldPricesSection() {
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       {saved ? <p className="text-sm text-emerald-700">{t('settings.saved')}</p> : null}
-      <Button type="submit" disabled={busy} className="min-h-12 w-full rounded-xl">
+      <Button
+        type="submit"
+        disabled={busy || !online}
+        title={!online ? t('offline.actionDisabled') : undefined}
+        className="min-h-12 w-full rounded-xl"
+      >
         {t('app.save')}
       </Button>
     </form>

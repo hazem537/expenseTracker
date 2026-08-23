@@ -1,9 +1,11 @@
 import { Wallet } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
 import { HideMoneyButton } from '@/shared/ui/HideMoney'
 import { ThemeToggle } from '@/shared/ui/ThemeToggle'
+import { useOnlineStatus } from '@/shared/lib/online'
+import { cn } from '@/lib/utils'
 
 interface AppHeaderProps {
   signedIn: boolean
@@ -14,9 +16,23 @@ const navIdle =
   'rounded-full px-3 py-2 text-sm font-medium text-ink hover:bg-navy hover:text-gold-bright'
 const navActive =
   'rounded-full bg-navy px-3 py-2 text-sm font-medium text-ivory ring-1 ring-gold/50 dark:text-gold-bright'
+const navDisabled =
+  'cursor-not-allowed rounded-full px-3 py-2 text-sm font-medium text-muted opacity-50'
+
+const desktopLinks = [
+  { to: '/', labelKey: 'app.navDashboard', exact: true, offlineOk: true },
+  { to: '/summary', labelKey: 'app.navSummary', offlineOk: false },
+  { to: '/expenses', labelKey: 'app.navExpenses', offlineOk: true },
+  { to: '/accounts', labelKey: 'app.navAccounts', offlineOk: true },
+  { to: '/gold', labelKey: 'app.navGold', offlineOk: false },
+  { to: '/stocks', labelKey: 'app.navStocks', offlineOk: false },
+  { to: '/settings', labelKey: 'app.navSettings', offlineOk: true },
+] as const
 
 export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
   const { t } = useTranslation()
+  const online = useOnlineStatus()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
     <header>
@@ -43,28 +59,41 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
         </div>
       </div>
       {signedIn ? (
-        <nav className="mx-auto hidden max-w-[768px] gap-2 px-4 pb-2 md:flex">
-          <Link to="/" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navDashboard')}
-          </Link>
-          <Link to="/summary" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navSummary')}
-          </Link>
-          <Link to="/expenses" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navExpenses')}
-          </Link>
-          <Link to="/accounts" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navAccounts')}
-          </Link>
-          <Link to="/gold" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navGold')}
-          </Link>
-          <Link to="/stocks" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navStocks')}
-          </Link>
-          <Link to="/settings" activeProps={{ className: navActive }} className={navIdle}>
-            {t('app.navSettings')}
-          </Link>
+        <nav className="mx-auto hidden max-w-[768px] gap-2 px-4 pb-2 md:flex" aria-label={t('app.name')}>
+          {desktopLinks.map((item) => {
+            const isActive =
+              'exact' in item && item.exact
+                ? pathname === item.to
+                : item.to === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(item.to)
+            const disabled = !online && !item.offlineOk
+            if (disabled) {
+              return (
+                <span
+                  key={item.to}
+                  role="link"
+                  aria-disabled="true"
+                  aria-label={`${t(item.labelKey)} — ${t('offline.navDisabled')}`}
+                  title={t('offline.navDisabled')}
+                  className={navDisabled}
+                >
+                  {t(item.labelKey)}
+                </span>
+              )
+            }
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={isActive ? 'page' : undefined}
+                activeProps={{ className: navActive }}
+                className={cn(navIdle)}
+              >
+                {t(item.labelKey)}
+              </Link>
+            )
+          })}
         </nav>
       ) : null}
     </header>

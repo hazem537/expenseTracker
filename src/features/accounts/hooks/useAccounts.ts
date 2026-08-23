@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { CurrencyCode } from '@/shared/lib/currencies'
+import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
 export interface Account {
@@ -29,52 +30,50 @@ async function setBalance(accountId: string, next: number) {
   if (error) throw error
 }
 
+async function fetchAccountsData(): Promise<{ accounts: Account[]; transfers: Transfer[] }> {
+  if (!supabase) return { accounts: [], transfers: [] }
+
+  const [{ data: accountRows, error: accountError }, { data: transferRows, error: transferError }] =
+    await Promise.all([
+      supabase.from('accounts').select('*').order('created_at', { ascending: true }),
+      supabase.from('transfers').select('*').order('occurred_on', { ascending: false }).limit(20),
+    ])
+
+  if (accountError) throw accountError
+  if (transferError) throw transferError
+
+  return {
+    accounts: (accountRows ?? []).map((row) => ({
+      ...row,
+      balance: Number(row.balance),
+    })) as Account[],
+    transfers: (transferRows ?? []).map((row) => ({
+      ...row,
+      from_amount: Number(row.from_amount),
+      to_amount: Number(row.to_amount),
+      fx_rate: Number(row.fx_rate),
+    })) as Transfer[],
+  }
+}
+
 export function useAccounts() {
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [transfers, setTransfers] = useState<Transfer[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const reload = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    const [{ data: accountRows, error: accountError }, { data: transferRows, error: transferError }] =
-      await Promise.all([
-        supabase.from('accounts').select('*').order('created_at', { ascending: true }),
-        supabase.from('transfers').select('*').order('occurred_on', { ascending: false }).limit(20),
-      ])
+  const query = useQuery({
+    queryKey: queryKeys.accounts.list,
+    queryFn: fetchAccountsData,
+    networkMode: 'offlineFirst',
+  })
 
-    if (accountError) setError(accountError.message)
-    else {
-      setAccounts(
-        (accountRows ?? []).map((row) => ({ ...row, balance: Number(row.balance) })) as Account[],
-      )
-    }
+  const accounts = query.data?.accounts ?? []
+  const transfers = query.data?.transfers ?? []
 
-    if (transferError) setError(transferError.message)
-    else {
-      setTransfers(
-        (transferRows ?? []).map((row) => ({
-          ...row,
-          from_amount: Number(row.from_amount),
-          to_amount: Number(row.to_amount),
-          fx_rate: Number(row.fx_rate),
-        })) as Transfer[],
-      )
-    }
-    setLoading(false)
-  }, [])
+  async function invalidateAccounts() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
+  }
 
-  useEffect(() => {
-    void reload()
-  }, [reload])
-
-  const createAccount = useCallback(
-    async (input: { name: string; currency: CurrencyCode; openingBalance: number }) => {
+  const createAccount = useMutation({
+    mutationFn: async (input: { name: string; currency: CurrencyCode; openingBalance: number }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const {
         data: { user },
@@ -87,34 +86,31 @@ export function useAccounts() {
         balance: input.openingBalance,
       })
       if (insertError) throw insertError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: invalidateAccounts,
+  })
 
-  const addMoney = useCallback(
-    async (accountId: string, amount: number) => {
+  const addMoney = useMutation({
+    mutationFn: async ({ accountId, amount }: { accountId: string; amount: number }) => {
       const account = accounts.find((item) => item.id === accountId)
       if (!account) throw new Error('Account not found')
       await setBalance(accountId, account.balance + amount)
-      await reload()
     },
-    [accounts, reload],
-  )
+    onSuccess: invalidateAccounts,
+  })
 
-  const spendMoney = useCallback(
-    async (accountId: string, amount: number) => {
+  const spendMoney = useMutation({
+    mutationFn: async ({ accountId, amount }: { accountId: string; amount: number }) => {
       const account = accounts.find((item) => item.id === accountId)
       if (!account) throw new Error('Account not found')
       if (account.balance < amount) throw new Error('Insufficient funds')
       await setBalance(accountId, account.balance - amount)
-      await reload()
     },
-    [accounts, reload],
-  )
+    onSuccess: invalidateAccounts,
+  })
 
-  const deleteAccount = useCallback(
-    async (accountId: string) => {
+  const deleteAccount = useMutation({
+    mutationFn: async (accountId: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const { count, error: expenseError } = await supabase
         .from('expenses')
@@ -131,13 +127,17 @@ export function useAccounts() {
 
       const { error: deleteError } = await supabase.from('accounts').delete().eq('id', accountId)
       if (deleteError) throw deleteError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: async () => {
+      await Promise.all([
+        invalidateAccounts(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+      ])
+    },
+  })
 
-  const transfer = useCallback(
-    async (input: {
+  const transfer = useMutation({
+    mutationFn: async (input: {
       fromAccountId: string
       toAccountId: string
       fromAmount: number
@@ -172,13 +172,18 @@ export function useAccounts() {
 
       await setBalance(from.id, from.balance - input.fromAmount)
       await setBalance(to.id, to.balance + input.toAmount)
-      await reload()
     },
-    [accounts, reload],
-  )
+    onSuccess: invalidateAccounts,
+  })
 
-  const updateAccount = useCallback(
-    async (accountId: string, input: { name: string; currency: CurrencyCode; balance: number }) => {
+  const updateAccount = useMutation({
+    mutationFn: async ({
+      accountId,
+      input,
+    }: {
+      accountId: string
+      input: { name: string; currency: CurrencyCode; balance: number }
+    }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const { error: updateError } = await supabase
         .from('accounts')
@@ -189,10 +194,36 @@ export function useAccounts() {
         })
         .eq('id', accountId)
       if (updateError) throw updateError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: invalidateAccounts,
+  })
 
-  return { accounts, transfers, loading, error, reload, createAccount, addMoney, spendMoney, deleteAccount, updateAccount, transfer }
+  const reload = async () => {
+    await invalidateAccounts()
+  }
+
+  return {
+    accounts,
+    transfers,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
+    reload,
+    createAccount: (input: { name: string; currency: CurrencyCode; openingBalance: number }) =>
+      createAccount.mutateAsync(input),
+    addMoney: (accountId: string, amount: number) => addMoney.mutateAsync({ accountId, amount }),
+    spendMoney: (accountId: string, amount: number) => spendMoney.mutateAsync({ accountId, amount }),
+    deleteAccount: (accountId: string) => deleteAccount.mutateAsync(accountId),
+    updateAccount: (
+      accountId: string,
+      input: { name: string; currency: CurrencyCode; balance: number },
+    ) => updateAccount.mutateAsync({ accountId, input }),
+    transfer: (input: {
+      fromAccountId: string
+      toAccountId: string
+      fromAmount: number
+      toAmount: number
+      occurredOn: string
+      note: string
+    }) => transfer.mutateAsync(input),
+  }
 }

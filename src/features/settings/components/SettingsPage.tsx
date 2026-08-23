@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { GoldPricesSection } from '@/features/gold'
 import { useProfile } from '@/features/settings/hooks/useProfile'
 import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
+import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase'
 import { InstallAppCard } from '@/shared/ui/InstallAppCard'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function SettingsPage() {
   const { t } = useTranslation()
+  const online = useOnlineStatus()
   const { profile, loading, error, saveDefaultCurrency } = useProfile()
   const [currency, setCurrency] = useState<CurrencyCode>('USD')
   const [saved, setSaved] = useState(false)
@@ -47,6 +49,7 @@ export function SettingsPage() {
               id="base-cur"
               className="mt-2 min-h-12 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base"
               value={currency}
+              disabled={!online}
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
             >
               {CURRENCIES.map((code) => (
@@ -59,7 +62,8 @@ export function SettingsPage() {
           {saved ? <p className="text-sm text-emerald-700">{t('settings.saved')}</p> : null}
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !online}
+            title={!online ? t('offline.actionDisabled') : undefined}
             className="min-h-12 w-full rounded-xl bg-navy font-semibold text-gold-bright disabled:opacity-60"
           >
             {t('app.save')}

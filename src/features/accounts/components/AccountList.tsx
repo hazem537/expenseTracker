@@ -7,6 +7,7 @@ interface AccountListProps {
   lang: string
   loading: boolean
   weights: Record<string, number>
+  actionsDisabled?: boolean
   onAddMoney: (account: Account) => void
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
@@ -17,6 +18,7 @@ export function AccountList({
   lang,
   loading,
   weights,
+  actionsDisabled = false,
   onAddMoney,
   onEdit,
   onDelete,
@@ -31,6 +33,7 @@ export function AccountList({
           account={item}
           lang={lang}
           weight={weights[item.id] ?? null}
+          actionsDisabled={actionsDisabled}
           onAddMoney={onAddMoney}
           onEdit={onEdit}
           onDelete={onDelete}

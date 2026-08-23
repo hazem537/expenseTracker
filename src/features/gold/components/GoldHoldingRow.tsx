@@ -12,6 +12,7 @@ interface GoldHoldingRowProps {
   lang: string
   defaultCurrency: string
   canTrade: boolean
+  canDelete?: boolean
   onBuy: () => void
   onSell: () => void
   onDelete: () => void
@@ -24,6 +25,7 @@ export function GoldHoldingRow({
   lang,
   defaultCurrency,
   canTrade,
+  canDelete = true,
   onBuy,
   onSell,
   onDelete,
@@ -46,6 +48,7 @@ export function GoldHoldingRow({
           size="icon"
           className="size-10 text-red-700"
           aria-label={t('app.delete')}
+          disabled={!canDelete}
           onClick={onDelete}
         >
           <Trash2 />

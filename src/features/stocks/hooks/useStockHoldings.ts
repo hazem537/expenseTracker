@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { normalizeSymbol, sameTicker } from '@/features/stocks/lib/quote'
+import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
 export interface StockHolding {
@@ -37,38 +38,33 @@ function weightedAvg(sharesA: number, costA: number, sharesB: number, costB: num
   return Math.round(((sharesA * costA + sharesB * costB) / total) * 1_000_000) / 1_000_000
 }
 
+async function fetchStockHoldings(): Promise<StockHolding[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('stock_holdings')
+    .select('*')
+    .order('symbol', { ascending: true })
+  if (error) throw error
+  return (data ?? []).map((row) => mapHolding(row as Record<string, unknown>))
+}
+
 export function useStockHoldings() {
-  const [holdings, setHoldings] = useState<StockHolding[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const reload = useCallback(async () => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    setError(null)
-    const { data, error: queryError } = await supabase
-      .from('stock_holdings')
-      .select('*')
-      .order('symbol', { ascending: true })
+  const query = useQuery({
+    queryKey: queryKeys.stocks.holdings,
+    queryFn: fetchStockHoldings,
+    networkMode: 'offlineFirst',
+  })
 
-    if (queryError) {
-      setError(queryError.message)
-      setHoldings([])
-    } else {
-      setHoldings((data ?? []).map((row) => mapHolding(row as Record<string, unknown>)))
-    }
-    setLoading(false)
-  }, [])
+  const holdings = query.data ?? []
 
-  useEffect(() => {
-    void reload()
-  }, [reload])
+  async function invalidateStocks() {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.stocks.all })
+  }
 
-  const upsertHolding = useCallback(
-    async (input: StockHoldingInput) => {
+  const upsertHolding = useMutation({
+    mutationFn: async (input: StockHoldingInput) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const symbol = normalizeSymbol(input.symbol)
       const existing = holdings.find((item) => sameTicker(item.symbol, symbol))
@@ -100,27 +96,12 @@ export function useStockHoldings() {
         })
         if (insertError) throw insertError
       }
-      await reload()
     },
-    [holdings, reload],
-  )
+    onSuccess: invalidateStocks,
+  })
 
-  const addShares = useCallback(
-    async (id: string, shares: number, price: number, quoteCurrency: string) => {
-      const holding = holdings.find((item) => item.id === id)
-      if (!holding) throw new Error('Holding not found')
-      await upsertHolding({
-        symbol: holding.symbol,
-        shares,
-        avgCost: price,
-        quoteCurrency,
-      })
-    },
-    [holdings, upsertHolding],
-  )
-
-  const reduceShares = useCallback(
-    async (id: string, sharesToRemove: number) => {
+  const reduceShares = useMutation({
+    mutationFn: async ({ id, sharesToRemove }: { id: string; sharesToRemove: number }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const holding = holdings.find((item) => item.id === id)
       if (!holding) throw new Error('Holding not found')
@@ -135,29 +116,41 @@ export function useStockHoldings() {
           .eq('id', id)
         if (updateError) throw updateError
       }
-      await reload()
     },
-    [holdings, reload],
-  )
+    onSuccess: invalidateStocks,
+  })
 
-  const deleteHolding = useCallback(
-    async (id: string) => {
+  const deleteHolding = useMutation({
+    mutationFn: async (id: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const { error: deleteError } = await supabase.from('stock_holdings').delete().eq('id', id)
       if (deleteError) throw deleteError
-      await reload()
     },
-    [reload],
-  )
+    onSuccess: invalidateStocks,
+  })
+
+  const reload = async () => {
+    await invalidateStocks()
+  }
 
   return {
     holdings,
-    loading,
-    error,
+    loading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
     reload,
-    upsertHolding,
-    addShares,
-    reduceShares,
-    deleteHolding,
+    upsertHolding: (input: StockHoldingInput) => upsertHolding.mutateAsync(input),
+    addShares: async (id: string, shares: number, price: number, quoteCurrency: string) => {
+      const holding = holdings.find((item) => item.id === id)
+      if (!holding) throw new Error('Holding not found')
+      await upsertHolding.mutateAsync({
+        symbol: holding.symbol,
+        shares,
+        avgCost: price,
+        quoteCurrency,
+      })
+    },
+    reduceShares: (id: string, sharesToRemove: number) =>
+      reduceShares.mutateAsync({ id, sharesToRemove }),
+    deleteHolding: (id: string) => deleteHolding.mutateAsync(id),
   }
 }

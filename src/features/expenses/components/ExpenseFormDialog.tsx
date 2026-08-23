@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -31,10 +32,28 @@ export function ExpenseFormDialog({
 }: ExpenseFormDialogProps) {
   const { t } = useTranslation()
   const isEdit = Boolean(expense)
+  const busyRef = useRef(false)
+
+  useEffect(() => {
+    if (!open) busyRef.current = false
+  }, [open])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && busyRef.current) return
+        onOpenChange(next)
+      }}
+    >
+      <DialogContent
+        onPointerDownOutside={(event) => {
+          if (busyRef.current) event.preventDefault()
+        }}
+        onEscapeKeyDown={(event) => {
+          if (busyRef.current) event.preventDefault()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{isEdit ? t('app.edit') : t('app.add')}</DialogTitle>
           <DialogDescription>
@@ -51,8 +70,17 @@ export function ExpenseFormDialog({
             initial={expense ?? null}
             accounts={accounts}
             defaultCurrency={defaultCurrency}
-            onCancel={() => onOpenChange(false)}
-            onSubmit={onSubmit}
+            onBusyChange={(next) => {
+              busyRef.current = next
+            }}
+            onCancel={() => {
+              if (!busyRef.current) onOpenChange(false)
+            }}
+            onSubmit={async (input) => {
+              await onSubmit(input)
+              busyRef.current = false
+              onOpenChange(false)
+            }}
           />
         )}
       </DialogContent>

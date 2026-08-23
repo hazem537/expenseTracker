@@ -9,12 +9,14 @@ import { TransferDialog } from '@/features/accounts/components/TransferDialog'
 import { useAccounts, type Account } from '@/features/accounts/hooks/useAccounts'
 import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
 import { useProfile } from '@/features/settings'
+import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 
 export function AccountsPage() {
   const { t, i18n } = useTranslation()
+  const online = useOnlineStatus()
   const { profile } = useProfile()
   const { accounts, transfers, loading, error, createAccount, addMoney, updateAccount, deleteAccount, transfer } =
     useAccounts()
@@ -30,6 +32,7 @@ export function AccountsPage() {
   const [weights, setWeights] = useState<Record<string, number>>({})
 
   useEffect(() => {
+    if (!online) return
     let cancelled = false
     void (async () => {
       const cache = new Map<string, number>()
@@ -60,24 +63,26 @@ export function AccountsPage() {
     return () => {
       cancelled = true
     }
-  }, [accounts, defaultCurrency])
+  }, [accounts, defaultCurrency, online])
 
   return (
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <AccountsHeader
         canTransfer={accounts.length >= 2}
+        actionsDisabled={!online}
         onAddAccount={() => setCreateOpen(true)}
         onTransfer={() => setTransferOpen(true)}
       />
       {loading ? <p>{t('app.loading')}</p> : null}
-      {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
+      {error && online ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {actionError ? <p className="text-red-600">{actionError}</p> : null}
       <AccountList
         accounts={accounts}
         lang={lang}
         loading={loading}
         weights={weights}
+        actionsDisabled={!online}
         onAddMoney={setDepositAccount}
         onEdit={setEditAccount}
         onDelete={setDeleteAccountTarget}

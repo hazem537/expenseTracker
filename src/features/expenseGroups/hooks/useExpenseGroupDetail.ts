@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
 import type { Expense } from '@/features/expenses/hooks/useExpenses'
 import type { ExpenseGroup, ExpenseGroupMember } from '@/features/expenseGroups/hooks/useExpenseGroups'
 import { queryKeys } from '@/shared/lib/queryKeys'
@@ -9,6 +10,8 @@ export interface PersonPaidTotal {
   label: string
   totalPaid: number
 }
+
+export type GroupExpense = Expense & { amount_group: number }
 
 function memberLabel(row: ExpenseGroupMember, fallback: string) {
   const name = row.display_name?.trim()
@@ -30,10 +33,29 @@ function mapExpense(row: Record<string, unknown>): Expense {
   }
 }
 
+async function fetchRates(fromCurrencies: string[], target: string) {
+  const cache = new Map<string, number>()
+  const unique = [...new Set(fromCurrencies.filter(Boolean))]
+  await Promise.all(
+    unique.map(async (from) => {
+      if (from === target) {
+        cache.set(from, 1)
+        return
+      }
+      try {
+        cache.set(from, await fetchExchangeRate(from, target))
+      } catch {
+        cache.set(from, 1)
+      }
+    }),
+  )
+  return cache
+}
+
 async function fetchGroupDetail(groupId: string): Promise<{
   group: ExpenseGroup | null
   members: ExpenseGroupMember[]
-  expenses: Expense[]
+  expenses: GroupExpense[]
   memberLabels: Record<string, string>
   personPaid: PersonPaidTotal[]
   groupTotal: number
@@ -96,15 +118,34 @@ async function fetchGroupDetail(groupId: string): Promise<{
   }
 
   const expenses = (expenseRows ?? []).map((row) => mapExpense(row as Record<string, unknown>))
+  const accountIds = [...new Set(expenses.map((item) => item.account_id).filter(Boolean))]
+  const currencyByAccount = new Map<string, string>()
+  if (accountIds.length > 0) {
+    const { data: accountRows } = await supabase.from('accounts').select('id, currency').in('id', accountIds)
+    for (const row of accountRows ?? []) {
+      currencyByAccount.set(String(row.id), String(row.currency))
+    }
+  }
+
+  const sourceCurrencies = expenses.map(
+    (item) => currencyByAccount.get(item.account_id) ?? group.currency,
+  )
+  const rates = await fetchRates(sourceCurrencies, group.currency)
+
+  const groupExpenses: GroupExpense[] = expenses.map((expense) => {
+    const from = currencyByAccount.get(expense.account_id) ?? group.currency
+    const rate = rates.get(from) ?? 1
+    return { ...expense, amount_group: convertAmount(expense.amount, rate) }
+  })
 
   const paidByUser: Record<string, number> = {}
   for (const member of members) {
     paidByUser[member.user_id] = 0
   }
   let groupTotal = 0
-  for (const expense of expenses) {
-    groupTotal += expense.amount
-    paidByUser[expense.user_id] = (paidByUser[expense.user_id] ?? 0) + expense.amount
+  for (const expense of groupExpenses) {
+    groupTotal += expense.amount_group
+    paidByUser[expense.user_id] = (paidByUser[expense.user_id] ?? 0) + expense.amount_group
     if (!memberLabels[expense.user_id]) {
       memberLabels[expense.user_id] = 'Member'
     }
@@ -120,7 +161,7 @@ async function fetchGroupDetail(groupId: string): Promise<{
   return {
     group,
     members,
-    expenses,
+    expenses: groupExpenses,
     memberLabels,
     personPaid,
     groupTotal,

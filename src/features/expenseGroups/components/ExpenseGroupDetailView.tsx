@@ -165,8 +165,7 @@ export function ExpenseGroupDetailView({
             <h3 className="text-sm font-semibold text-heading">{t('expenseGroups.expenses')}</h3>
             <ExpenseGroupExpensesTable
               expenses={expenses}
-              accounts={accounts}
-              currencyFallback={group.currency}
+              groupCurrency={group.currency}
               lang={lang}
               personName={personName}
             />

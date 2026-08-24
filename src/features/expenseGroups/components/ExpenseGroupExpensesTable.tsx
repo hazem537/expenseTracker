@@ -2,25 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import type { Account } from '@/features/accounts/hooks/useAccounts'
-import type { Expense } from '@/features/expenses/hooks/useExpenses'
+import type { GroupExpense } from '@/features/expenseGroups/hooks/useExpenseGroupDetail'
 import { formatDate } from '@/shared/lib/format'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const PAGE_SIZE = 10
 
 interface ExpenseGroupExpensesTableProps {
-  expenses: Expense[]
-  accounts: Account[]
-  currencyFallback: string
+  expenses: GroupExpense[]
+  groupCurrency: string
   lang: string
   personName: (userId: string) => string
 }
 
 export function ExpenseGroupExpensesTable({
   expenses,
-  accounts,
-  currencyFallback,
+  groupCurrency,
   lang,
   personName,
 }: ExpenseGroupExpensesTableProps) {
@@ -63,8 +60,6 @@ export function ExpenseGroupExpensesTable({
           </thead>
           <tbody>
             {pageRows.map((expense) => {
-              const accountCurrency =
-                accounts.find((a) => a.id === expense.account_id)?.currency ?? currencyFallback
               return (
                 <tr
                   key={expense.id}
@@ -85,7 +80,7 @@ export function ExpenseGroupExpensesTable({
                     {personName(expense.user_id)}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-end font-semibold text-heading">
-                    <MoneyText amount={expense.amount} lang={lang} currency={accountCurrency} />
+                    <MoneyText amount={expense.amount_group} lang={lang} currency={groupCurrency} />
                   </td>
                 </tr>
               )

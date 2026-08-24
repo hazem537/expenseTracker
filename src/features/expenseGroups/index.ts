@@ -2,6 +2,7 @@ export { useExpenseGroups, type ExpenseGroup, type ExpenseGroupMember } from './
 export {
   useExpenseGroupDetail,
   type PersonPaidTotal,
+  type GroupExpense,
 } from './hooks/useExpenseGroupDetail'
 export { ExpenseGroupsPage } from './components/ExpenseGroupsPage'
 export { ExpenseGroupDetailView } from './components/ExpenseGroupDetailView'

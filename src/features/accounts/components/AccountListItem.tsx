@@ -1,4 +1,4 @@
-import { Pencil, Plus, Share2, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Pencil, Plus, Share2, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
@@ -19,6 +19,7 @@ interface AccountListItemProps {
   onDelete: (account: Account) => void
   onShare: (account: Account) => void
   onViewActivity: (account: Account) => void
+  onToggleDashboard: (account: Account) => void
 }
 
 export function AccountListItem({
@@ -35,6 +36,7 @@ export function AccountListItem({
   onDelete,
   onShare,
   onViewActivity,
+  onToggleDashboard,
 }: AccountListItemProps) {
   const { t } = useTranslation()
   const disabledTitle = actionsDisabled ? t('offline.actionDisabled') : undefined
@@ -50,6 +52,11 @@ export function AccountListItem({
           {isShared ? (
             <span className="ms-2 rounded-full bg-gold-soft/50 px-2 py-0.5 text-xs font-medium text-heading">
               {t('accounts.sharedBadge')}
+            </span>
+          ) : null}
+          {account.hide_on_dashboard ? (
+            <span className="ms-2 rounded-full bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted">
+              {t('accounts.hiddenOnDashboard')}
             </span>
           ) : null}
         </p>
@@ -86,6 +93,17 @@ export function AccountListItem({
         {t('accounts.viewActivity')}
       </button>
       <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-10 flex-1 rounded-xl"
+          disabled={actionsDisabled}
+          title={disabledTitle}
+          onClick={() => onToggleDashboard(account)}
+        >
+          {account.hide_on_dashboard ? <Eye /> : <EyeOff />}
+          {account.hide_on_dashboard ? t('accounts.showOnDashboard') : t('accounts.hideFromDashboard')}
+        </Button>
         <Button
           type="button"
           variant="outline"

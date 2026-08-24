@@ -1,4 +1,4 @@
-import { Share2, Trash2 } from 'lucide-react'
+import { Archive, ArchiveRestore, Share2, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { ExpenseGroup } from '@/features/expenseGroups/hooks/useExpenseGroups'
@@ -10,6 +10,7 @@ interface ExpenseGroupListItemProps {
   actionsDisabled?: boolean
   onOpen: (group: ExpenseGroup) => void
   onShare: (group: ExpenseGroup) => void
+  onArchive: (group: ExpenseGroup) => void
   onDelete: (group: ExpenseGroup) => void
 }
 
@@ -20,6 +21,7 @@ export function ExpenseGroupListItem({
   actionsDisabled = false,
   onOpen,
   onShare,
+  onArchive,
   onDelete,
 }: ExpenseGroupListItemProps) {
   const { t } = useTranslation()
@@ -41,6 +43,11 @@ export function ExpenseGroupListItem({
             {isShared ? (
               <span className="ms-2 rounded-full bg-gold-soft/50 px-2 py-0.5 text-xs font-medium text-heading">
                 {t('expenseGroups.sharedBadge')}
+              </span>
+            ) : null}
+            {group.archived ? (
+              <span className="ms-2 rounded-full bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted">
+                {t('expenseGroups.archivedBadge')}
               </span>
             ) : null}
           </p>
@@ -82,6 +89,19 @@ export function ExpenseGroupListItem({
           <Share2 />
           {t('expenseGroups.share')}
         </Button>
+        {isCreator ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-10 flex-1 rounded-xl"
+            disabled={actionsDisabled}
+            title={disabledTitle}
+            onClick={() => onArchive(group)}
+          >
+            {group.archived ? <ArchiveRestore /> : <Archive />}
+            {group.archived ? t('expenseGroups.unarchive') : t('expenseGroups.archive')}
+          </Button>
+        ) : null}
       </div>
     </li>
   )

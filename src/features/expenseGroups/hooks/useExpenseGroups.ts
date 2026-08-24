@@ -9,6 +9,7 @@ export interface ExpenseGroup {
   name: string
   currency: CurrencyCode
   share_code: string | null
+  archived: boolean
   created_at: string
 }
 
@@ -63,6 +64,7 @@ async function fetchExpenseGroupsData(): Promise<{
   const client = supabase
   const groups = (groupRows ?? []).map((row) => ({
     ...row,
+    archived: Boolean(row.archived),
     share_code: row.share_code == null ? null : String(row.share_code),
   })) as ExpenseGroup[]
 
@@ -177,6 +179,18 @@ export function useExpenseGroups() {
     onSuccess: invalidateGroups,
   })
 
+  const setArchived = useMutation({
+    mutationFn: async ({ groupId, archived }: { groupId: string; archived: boolean }) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase
+        .from('expense_groups')
+        .update({ archived })
+        .eq('id', groupId)
+      if (error) throw error
+    },
+    onSuccess: invalidateGroups,
+  })
+
   const leaveGroup = useMutation({
     mutationFn: async (groupId: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
@@ -229,6 +243,8 @@ export function useExpenseGroups() {
     disableSharing: (groupId: string) => disableSharing.mutateAsync(groupId),
     joinByShareCode: (code: string) => joinByShareCode.mutateAsync(code),
     leaveGroup: (groupId: string) => leaveGroup.mutateAsync(groupId),
+    setArchived: (groupId: string, archived: boolean) =>
+      setArchived.mutateAsync({ groupId, archived }),
     deleteGroup: (groupId: string) => deleteGroup.mutateAsync(groupId),
   }
 }

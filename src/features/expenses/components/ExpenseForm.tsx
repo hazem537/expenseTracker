@@ -13,7 +13,7 @@ import { useOnlineStatus } from '@/shared/lib/online'
 interface ExpenseFormProps {
   initial?: Expense | null
   accounts: Account[]
-  groups?: { id: string; name: string; currency?: string }[]
+  groups?: { id: string; name: string; currency?: string; archived?: boolean }[]
   lockGroupId?: string
   groupCurrency?: string
   defaultCurrency: CurrencyCode
@@ -320,7 +320,7 @@ export function ExpenseForm({
             <option value="">{t('expense.groupNone')}</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
-                {group.name}
+                {group.archived ? t('expense.groupArchived', { name: group.name }) : group.name}
               </option>
             ))}
           </select>

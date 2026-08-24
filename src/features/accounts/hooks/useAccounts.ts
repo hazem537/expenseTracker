@@ -11,6 +11,7 @@ export interface Account {
   balance: number
   created_at: string
   share_code: string | null
+  hide_on_dashboard: boolean
 }
 
 export interface Transfer {
@@ -88,6 +89,7 @@ async function fetchAccountsData(): Promise<{
   const accounts = (accountRows ?? []).map((row) => ({
     ...row,
     balance: Number(row.balance),
+    hide_on_dashboard: Boolean(row.hide_on_dashboard),
     share_code: row.share_code == null ? null : String(row.share_code),
   })) as Account[]
 
@@ -294,6 +296,18 @@ export function useAccounts() {
     onSuccess: invalidateAccounts,
   })
 
+  const setHideOnDashboard = useMutation({
+    mutationFn: async ({ accountId, hide }: { accountId: string; hide: boolean }) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase
+        .from('accounts')
+        .update({ hide_on_dashboard: hide })
+        .eq('id', accountId)
+      if (error) throw error
+    },
+    onSuccess: invalidateAccounts,
+  })
+
   const enableSharing = useMutation({
     mutationFn: async (accountId: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
@@ -398,6 +412,8 @@ export function useAccounts() {
       accountId: string,
       input: { name: string; currency: CurrencyCode; balance: number },
     ) => updateAccount.mutateAsync({ accountId, input }),
+    setHideOnDashboard: (accountId: string, hide: boolean) =>
+      setHideOnDashboard.mutateAsync({ accountId, hide }),
     transfer: (input: {
       fromAccountId: string
       toAccountId: string

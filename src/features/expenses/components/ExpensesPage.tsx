@@ -140,7 +140,7 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
               <option value="none">{t('expense.filterNoGroup')}</option>
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
-                  {group.name}
+                  {group.archived ? t('expense.groupArchived', { name: group.name }) : group.name}
                 </option>
               ))}
             </select>

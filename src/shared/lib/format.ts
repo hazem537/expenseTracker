@@ -75,15 +75,34 @@ export function formatMonthLabel(year: number, monthIndex: number, lang: string)
   }).format(new Date(year, monthIndex, 1))
 }
 
+export function toIsoDate(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 export function monthRange(date = new Date()) {
   const year = date.getFullYear()
   const month = date.getMonth()
   const start = new Date(year, month, 1)
   const end = new Date(year, month + 1, 0)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const toIso = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  return { start: toIso(start), end: toIso(end), year, month }
+  return { start: toIsoDate(start), end: toIsoDate(end), year, month }
+}
+
+export function shiftMonth(year: number, monthIndex: number, delta: number) {
+  const next = new Date(year, monthIndex + delta, 1)
+  return monthRange(next)
+}
+
+export function eachIsoDay(start: string, end: string) {
+  const days: string[] = []
+  const cursor = new Date(`${start}T00:00:00`)
+  const last = new Date(`${end}T00:00:00`)
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(last.getTime()) || cursor > last) return days
+  while (cursor <= last) {
+    days.push(toIsoDate(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return days
 }
 
 export function daysInMonth(year: number, monthIndex: number) {

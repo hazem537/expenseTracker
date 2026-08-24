@@ -110,6 +110,7 @@ async function fetchGroupDetail(groupId: string): Promise<{
 
   const group: ExpenseGroup = {
     ...(groupRow as ExpenseGroup),
+    archived: Boolean(groupRow.archived),
     share_code: groupRow.share_code == null ? null : String(groupRow.share_code),
   }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Plus, Share2 } from 'lucide-react'
+import { Archive, ArchiveRestore, ArrowLeft, Plus, Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useAccounts } from '@/features/accounts/hooks/useAccounts'
@@ -24,6 +24,7 @@ interface ExpenseGroupDetailViewProps {
   onRegenerateShareCode: (groupId: string) => Promise<string>
   onDisableSharing: (groupId: string) => Promise<void>
   onLeave: (groupId: string) => Promise<void>
+  onArchive: (groupId: string, archived: boolean) => Promise<void>
   onLeft?: () => void
 }
 
@@ -35,6 +36,7 @@ export function ExpenseGroupDetailView({
   onRegenerateShareCode,
   onDisableSharing,
   onLeave,
+  onArchive,
   onLeft,
 }: ExpenseGroupDetailViewProps) {
   const { t, i18n } = useTranslation()
@@ -97,6 +99,11 @@ export function ExpenseGroupDetailView({
             <div>
               <h2 className="text-xl font-bold leading-tight text-heading sm:text-2xl">
                 {group.name}
+                {group.archived ? (
+                  <span className="ms-2 align-middle rounded-full bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted">
+                    {t('expenseGroups.archivedBadge')}
+                  </span>
+                ) : null}
               </h2>
               <p className="mt-1 text-sm text-muted">
                 {group.currency} ·{' '}
@@ -115,6 +122,19 @@ export function ExpenseGroupDetailView({
                 <Share2 />
                 {t('expenseGroups.share')}
               </Button>
+              {currentUserId && group.user_id === currentUserId ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 rounded-xl"
+                  disabled={!online}
+                  title={!online ? t('offline.actionDisabled') : undefined}
+                  onClick={() => void onArchive(group.id, !group.archived)}
+                >
+                  {group.archived ? <ArchiveRestore /> : <Archive />}
+                  {group.archived ? t('expenseGroups.unarchive') : t('expenseGroups.archive')}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 className="h-11 rounded-xl"

@@ -18,7 +18,7 @@ interface ExpenseFormDialogProps {
   onOpenChange: (open: boolean) => void
   expense?: Expense | null
   accounts: Account[]
-  groups?: { id: string; name: string; currency?: string }[]
+  groups?: { id: string; name: string; currency?: string; archived?: boolean }[]
   defaultCurrency: CurrencyCode
   onSubmit: (input: ExpenseInput) => Promise<void>
 }

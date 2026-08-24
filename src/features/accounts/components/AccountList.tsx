@@ -16,6 +16,7 @@ interface AccountListProps {
   onDelete: (account: Account) => void
   onShare: (account: Account) => void
   onViewActivity: (account: Account) => void
+  onToggleDashboard: (account: Account) => void
   hideEmpty?: boolean
 }
 
@@ -32,6 +33,7 @@ export function AccountList({
   onDelete,
   onShare,
   onViewActivity,
+  onToggleDashboard,
   hideEmpty = false,
 }: AccountListProps) {
   const { t } = useTranslation()
@@ -55,6 +57,7 @@ export function AccountList({
           onDelete={onDelete}
           onShare={onShare}
           onViewActivity={onViewActivity}
+          onToggleDashboard={onToggleDashboard}
         />
       ))}
       {!loading && accounts.length === 0 && !hideEmpty ? (

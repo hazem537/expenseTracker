@@ -39,6 +39,7 @@ export function AccountsPage() {
     disableSharing,
     joinByShareCode,
     leaveSharedAccount,
+    setHideOnDashboard,
   } = useAccounts()
   const lang = i18n.language
   const defaultCurrency = profile?.default_currency ?? 'USD'
@@ -187,6 +188,9 @@ export function AccountsPage() {
         onDelete={setDeleteAccountTarget}
         onShare={setShareAccount}
         onViewActivity={(account) => setActivityAccountId(account.id)}
+        onToggleDashboard={(account) => {
+          void setHideOnDashboard(account.id, !account.hide_on_dashboard)
+        }}
         hideEmpty={Boolean(currencyFilter)}
       />
         </div>

@@ -21,6 +21,7 @@ create table if not exists public.accounts (
 );
 
 alter table public.accounts add column if not exists share_code text;
+alter table public.accounts add column if not exists hide_on_dashboard boolean not null default false;
 create unique index if not exists accounts_share_code_uidx
   on public.accounts (share_code)
   where share_code is not null;
@@ -442,6 +443,8 @@ create table if not exists public.expense_groups (
 create unique index if not exists expense_groups_share_code_uidx
   on public.expense_groups (share_code)
   where share_code is not null;
+
+alter table public.expense_groups add column if not exists archived boolean not null default false;
 
 create index if not exists expense_groups_user_idx on public.expense_groups (user_id);
 

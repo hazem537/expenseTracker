@@ -14,6 +14,7 @@ import { useProfile } from '@/features/settings'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
+import { SectionTabs } from '@/shared/ui/SectionTabs'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
 export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }) {
@@ -32,6 +33,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
     disableSharing,
     joinByShareCode,
     leaveGroup,
+    setArchived,
     deleteGroup,
   } = useExpenseGroups()
 
@@ -43,6 +45,11 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
   const [deleteTarget, setDeleteTarget] = useState<ExpenseGroup | null>(null)
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [listTab, setListTab] = useState<'active' | 'archived'>('active')
+
+  const visibleGroups = useMemo(() => {
+    return groups.filter((group) => (listTab === 'archived' ? group.archived : !group.archived))
+  }, [groups, listTab])
 
   const memberCounts = useMemo(() => {
     const next: Record<string, number> = {}
@@ -68,6 +75,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
           onRegenerateShareCode={regenerateShareCode}
           onDisableSharing={disableSharing}
           onLeave={leaveGroup}
+          onArchive={setArchived}
           onLeft={() => setActiveGroupId(null)}
         />
       </div>
@@ -86,11 +94,26 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
       {loading ? <p>{t('app.loading')}</p> : null}
       {error && online ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {actionError ? <p className="text-red-600">{actionError}</p> : null}
+      {groups.length > 0 ? (
+        <SectionTabs
+          value={listTab}
+          onChange={setListTab}
+          items={[
+            { id: 'active', label: t('expenseGroups.tabActive') },
+            { id: 'archived', label: t('expenseGroups.tabArchived') },
+          ]}
+        />
+      ) : null}
       {!loading && groups.length === 0 ? (
         <p className="text-muted">{t('expenseGroups.empty')}</p>
       ) : null}
+      {!loading && groups.length > 0 && visibleGroups.length === 0 ? (
+        <p className="text-muted">
+          {listTab === 'archived' ? t('expenseGroups.emptyArchived') : t('expenseGroups.emptyActive')}
+        </p>
+      ) : null}
       <ul className="space-y-3">
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <ExpenseGroupListItem
             key={group.id}
             group={group}
@@ -99,6 +122,9 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
             actionsDisabled={!online}
             onOpen={(g) => setActiveGroupId(g.id)}
             onShare={setShareGroup}
+            onArchive={(g) => {
+              void setArchived(g.id, !g.archived)
+            }}
             onDelete={setDeleteTarget}
           />
         ))}

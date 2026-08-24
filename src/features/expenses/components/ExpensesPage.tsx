@@ -13,6 +13,7 @@ import { formatDate } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
@@ -30,6 +31,7 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const [filterAccountId, setFilterAccountId] = useState('')
   const [filterCategory, setFilterCategory] = useState<'' | Category>('')
   const [filterGroupId, setFilterGroupId] = useState<GroupFilter>('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const lang = i18n.language
   const defaultCurrency = profile?.default_currency ?? 'USD'
   const dialogOpen = dialogExpense !== null
@@ -190,64 +192,61 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
             const groupName = item.group_id ? groupNameById[item.group_id] : null
             const canMutate = online && !item.pending
             return (
-              <li
+              <ExpandableRecord
                 key={item.id}
-                className="flex items-start justify-between gap-2 rounded-2xl border border-gold-soft/70 bg-surface p-3 shadow-[0_12px_28px_rgba(201,162,39,0.08)] sm:gap-3 sm:p-4"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">
-                    <MoneyText amount={item.amount} lang={lang} currency={account?.currency} />
-                    {item.pending ? (
-                      <span className="ms-2 text-xs font-medium text-amber-700 dark:text-amber-300">
-                        {t('offline.pendingBadge')}
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+                expanded={expandedId === item.id}
+                onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
+                summary={
+                  <p className="flex min-w-0 items-center gap-2 truncate text-sm text-muted">
                     <span
                       className="inline-block size-2.5 shrink-0 rounded-full"
                       style={{ background: CATEGORY_COLORS[item.category] }}
                       aria-hidden
                     />
-                    {t(`categories.${item.category}`)}
-                    {account ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span className="truncate">{account.name}</span>
-                      </>
-                    ) : null}
+                    <span className="truncate font-medium text-heading">{t(`categories.${item.category}`)}</span>
                     <span aria-hidden>·</span>
-                    {formatDate(item.occurred_on, lang)}
-                    {account &&
-                    (Boolean(account.share_code) ||
-                      account.user_id !== item.user_id ||
-                      (currentUserId != null && item.user_id !== currentUserId)) ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        {t('expense.addedBy', {
-                          name:
-                            memberLabels[item.user_id] ??
-                            (item.user_id === currentUserId
-                              ? t('accounts.you')
-                              : t('accounts.memberFallback')),
-                        })}
-                      </>
+                    <span className="shrink-0">{formatDate(item.occurred_on, lang)}</span>
+                  </p>
+                }
+                value={
+                  <p className="font-semibold">
+                    <MoneyText amount={item.amount} lang={lang} currency={account?.currency} />
+                    {item.pending ? (
+                      <span className="ms-1 block text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        {t('offline.pendingBadge')}
+                      </span>
                     ) : null}
                   </p>
-                  {groupName || item.group_id ? (
-                    <p className="mt-1.5">
-                      <span className="inline-flex max-w-full items-center rounded-full bg-navy/10 px-2 py-0.5 text-xs font-medium text-heading dark:bg-gold/20">
-                        <span className="truncate">
-                          {t('expense.inGroup', {
-                            name: groupName ?? t('expense.unknownGroup'),
-                          })}
-                        </span>
+                }
+              >
+                {account ? <p className="text-sm text-muted">{account.name}</p> : null}
+                {account &&
+                (Boolean(account.share_code) ||
+                  account.user_id !== item.user_id ||
+                  (currentUserId != null && item.user_id !== currentUserId)) ? (
+                  <p className="text-sm text-muted">
+                    {t('expense.addedBy', {
+                      name:
+                        memberLabels[item.user_id] ??
+                        (item.user_id === currentUserId
+                          ? t('accounts.you')
+                          : t('accounts.memberFallback')),
+                    })}
+                  </p>
+                ) : null}
+                {groupName || item.group_id ? (
+                  <p>
+                    <span className="inline-flex max-w-full items-center rounded-full bg-navy/10 px-2 py-0.5 text-xs font-medium text-heading dark:bg-gold/20">
+                      <span className="truncate">
+                        {t('expense.inGroup', {
+                          name: groupName ?? t('expense.unknownGroup'),
+                        })}
                       </span>
-                    </p>
-                  ) : null}
-                  {item.note ? <p className="mt-1 truncate text-sm text-muted">{item.note}</p> : null}
-                </div>
-                <div className="flex shrink-0 gap-0.5 sm:gap-1">
+                    </span>
+                  </p>
+                ) : null}
+                {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
+                <div className="flex justify-end gap-1">
                   <Button
                     type="button"
                     variant="ghost"
@@ -273,7 +272,7 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
                     <Trash2 />
                   </Button>
                 </div>
-              </li>
+              </ExpandableRecord>
             )
           })}
         </ul>

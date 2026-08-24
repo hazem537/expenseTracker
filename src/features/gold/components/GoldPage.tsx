@@ -33,6 +33,7 @@ export function GoldPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const [addOpen, setAddOpen] = useState(false)
   const [trade, setTrade] = useState<{ side: GoldTradeSide; holdingId?: string } | null>(null)
   const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const fetchedDefaultPrices = useRef(false)
 
   useEffect(() => {
@@ -147,6 +148,8 @@ export function GoldPage({ hideTitle = false }: { hideTitle?: boolean }) {
               defaultCurrency={defaultCurrency}
               canTrade={online && accounts.length > 0 && prices != null}
               canDelete={online}
+              expanded={expandedId === item.id}
+              onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
               onDelete={() => setDeleteHoldingId(item.id)}

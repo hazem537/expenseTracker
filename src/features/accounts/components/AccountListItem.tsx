@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 
 interface AccountListItemProps {
   account: Account
@@ -11,6 +12,8 @@ interface AccountListItemProps {
   memberCount: number
   isCreator: boolean
   actionsDisabled?: boolean
+  expanded: boolean
+  onToggle: () => void
   onAddMoney: (account: Account) => void
   onEdit: (account: Account) => void
   onDelete: (account: Account) => void
@@ -25,6 +28,8 @@ export function AccountListItem({
   memberCount,
   isCreator,
   actionsDisabled = false,
+  expanded,
+  onToggle,
   onAddMoney,
   onEdit,
   onDelete,
@@ -36,47 +41,26 @@ export function AccountListItem({
   const isShared = memberCount > 1 || Boolean(account.share_code)
 
   return (
-    <li className="space-y-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold">
-            <button
-              type="button"
-              className="text-start underline-offset-2 hover:underline"
-              onClick={() => onViewActivity(account)}
-            >
-              {account.name}
-            </button>
-            {isShared ? (
-              <span className="ms-2 rounded-full bg-gold-soft/50 px-2 py-0.5 text-xs font-medium text-heading">
-                {t('accounts.sharedBadge')}
-              </span>
-            ) : null}
-          </p>
-          <p className="text-sm text-muted">{account.currency}</p>
-          <button
-            type="button"
-            className="mt-1 text-xs font-medium text-muted underline"
-            onClick={() => onViewActivity(account)}
-          >
-            {t('accounts.viewActivity')}
-          </button>
-        </div>
-        {isCreator ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-10 shrink-0 text-red-700"
-            aria-label={actionsDisabled ? t('offline.actionDisabled') : t('app.delete')}
-            disabled={actionsDisabled}
-            title={disabledTitle}
-            onClick={() => onDelete(account)}
-          >
-            <Trash2 />
-          </Button>
-        ) : null}
-      </div>
+    <ExpandableRecord
+      expanded={expanded}
+      onToggle={onToggle}
+      summary={
+        <p className="truncate font-semibold">
+          {account.name}
+          {isShared ? (
+            <span className="ms-2 rounded-full bg-gold-soft/50 px-2 py-0.5 text-xs font-medium text-heading">
+              {t('accounts.sharedBadge')}
+            </span>
+          ) : null}
+        </p>
+      }
+      value={
+        <p className="text-sm font-semibold">
+          <MoneyText amount={account.balance} lang={lang} currency={account.currency} />
+        </p>
+      }
+    >
+      <p className="text-sm text-muted">{account.currency}</p>
       <div className="grid grid-cols-2 gap-2 text-center">
         <div className="rounded-xl bg-gold-soft/30 p-2">
           <p className="text-xs text-muted">{t('accounts.weight')}</p>
@@ -94,6 +78,13 @@ export function AccountListItem({
           <div className="h-full rounded-full bg-navy" style={{ width: `${Math.min(weight, 100)}%` }} />
         </div>
       ) : null}
+      <button
+        type="button"
+        className="text-xs font-medium text-muted underline"
+        onClick={() => onViewActivity(account)}
+      >
+        {t('accounts.viewActivity')}
+      </button>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
@@ -130,7 +121,21 @@ export function AccountListItem({
             {t('app.edit')}
           </Button>
         ) : null}
+        {isCreator ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-10 shrink-0 text-red-700"
+            aria-label={actionsDisabled ? t('offline.actionDisabled') : t('app.delete')}
+            disabled={actionsDisabled}
+            title={disabledTitle}
+            onClick={() => onDelete(account)}
+          >
+            <Trash2 />
+          </Button>
+        ) : null}
       </div>
-    </li>
+    </ExpandableRecord>
   )
 }

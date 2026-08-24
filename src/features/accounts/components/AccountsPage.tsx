@@ -14,6 +14,7 @@ import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchan
 import { useProfile } from '@/features/settings'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
+import { SectionTabs } from '@/shared/ui/SectionTabs'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 
@@ -52,6 +53,7 @@ export function AccountsPage() {
   const [activityAccountId, setActivityAccountId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [currencyFilter, setCurrencyFilter] = useState('')
+  const [hubTab, setHubTab] = useState<'accounts' | 'transfers'>('accounts')
   const [weights, setWeights] = useState<Record<string, number>>({})
 
   const usedCurrencies = useMemo(() => {
@@ -134,6 +136,17 @@ export function AccountsPage() {
         onTransfer={() => setTransferOpen(true)}
         onJoin={() => setJoinOpen(true)}
       />
+      <SectionTabs
+        value={hubTab}
+        onChange={setHubTab}
+        items={[
+          { id: 'accounts', label: t('accounts.tabAccounts') },
+          { id: 'transfers', label: t('accounts.tabTransfers') },
+        ]}
+      />
+      {actionError ? <p className="text-red-600">{actionError}</p> : null}
+      {hubTab === 'accounts' ? (
+        <div className="space-y-6">
       {usedCurrencies.length > 1 ? (
         <div>
           <label className="mb-1 block text-sm font-medium text-heading" htmlFor="account-currency-filter">
@@ -156,7 +169,6 @@ export function AccountsPage() {
       ) : null}
       {loading ? <p>{t('app.loading')}</p> : null}
       {error && online ? <p className="text-red-600">{t('expense.error')}</p> : null}
-      {actionError ? <p className="text-red-600">{actionError}</p> : null}
       {!loading && accounts.length > 0 && visibleAccounts.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
           {t('accounts.filterEmpty')}
@@ -177,7 +189,10 @@ export function AccountsPage() {
         onViewActivity={(account) => setActivityAccountId(account.id)}
         hideEmpty={Boolean(currencyFilter)}
       />
-      <RecentTransfers transfers={transfers} accounts={accounts} lang={lang} />
+        </div>
+      ) : (
+        <RecentTransfers transfers={transfers} accounts={accounts} lang={lang} />
+      )}
       <AccountFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { estimateGoldValue, type GoldHolding } from '@/features/gold/hooks/useGoldHoldings'
 import type { KaratPrices } from '@/features/gold/lib/gold'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 
 function pnlClass(value: number) {
   if (value > 0.004) return 'text-emerald-600'
@@ -19,6 +20,8 @@ interface GoldHoldingRowProps {
   defaultCurrency: string
   canTrade: boolean
   canDelete?: boolean
+  expanded: boolean
+  onToggle: () => void
   onBuy: () => void
   onSell: () => void
   onDelete: () => void
@@ -32,6 +35,8 @@ export function GoldHoldingRow({
   defaultCurrency,
   canTrade,
   canDelete = true,
+  expanded,
+  onToggle,
   onBuy,
   onSell,
   onDelete,
@@ -44,44 +49,34 @@ export function GoldHoldingRow({
   const winRatio = pnl != null && cost > 0 ? (pnl / cost) * 100 : null
 
   return (
-    <li className="space-y-3 rounded-2xl border border-gold-soft/80 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">
-            {item.karat}K · <span className="font-nums">{item.grams}</span> g
+    <ExpandableRecord
+      expanded={expanded}
+      onToggle={onToggle}
+      summary={
+        <p className="truncate font-semibold">
+          {item.karat}K · <span className="font-nums">{item.grams}</span> g
+        </p>
+      }
+      value={
+        winRatio != null ? (
+          <p className={`text-base font-bold font-nums ${pnlClass(winRatio)}`}>
+            {winRatio >= 0 ? '+' : ''}
+            {winRatio.toFixed(1)}%
           </p>
-          {item.avg_cost > 0 ? (
-            <p className="text-sm text-muted">
-              {t('gold.avgCost')}: <MoneyText amount={item.avg_cost} lang={lang} currency={defaultCurrency} />
-            </p>
-          ) : null}
-          {livePerGram != null ? (
-            <p className="text-sm text-muted">
-              {t('gold.live')}: <MoneyText amount={livePerGram} lang={lang} currency={defaultCurrency} />
-            </p>
-          ) : null}
-          {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
-        </div>
-        <div className="flex items-start gap-1">
-          {winRatio != null ? (
-            <p className={`pt-1 text-lg font-bold font-nums ${pnlClass(winRatio)}`}>
-              {winRatio >= 0 ? '+' : ''}
-              {winRatio.toFixed(1)}%
-            </p>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-10 text-red-700"
-            aria-label={t('app.delete')}
-            disabled={!canDelete}
-            onClick={onDelete}
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      </div>
+        ) : undefined
+      }
+    >
+      {item.avg_cost > 0 ? (
+        <p className="text-sm text-muted">
+          {t('gold.avgCost')}: <MoneyText amount={item.avg_cost} lang={lang} currency={defaultCurrency} />
+        </p>
+      ) : null}
+      {livePerGram != null ? (
+        <p className="text-sm text-muted">
+          {t('gold.live')}: <MoneyText amount={livePerGram} lang={lang} currency={defaultCurrency} />
+        </p>
+      ) : null}
+      {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
       <div className="grid grid-cols-2 gap-2 text-center">
         <div className="rounded-xl bg-gold-soft/30 p-2">
           <p className="text-xs text-muted">{t('gold.weight')}</p>
@@ -108,7 +103,18 @@ export function GoldHoldingRow({
           <TrendingDown />
           {t('gold.sell')}
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-10 shrink-0 text-red-700"
+          aria-label={t('app.delete')}
+          disabled={!canDelete}
+          onClick={onDelete}
+        >
+          <Trash2 />
+        </Button>
       </div>
-    </li>
+    </ExpandableRecord>
   )
 }

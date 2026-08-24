@@ -30,7 +30,7 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { accounts, addMoney, spendMoney } = useAccounts()
   const { holdings, loading, error, upsertHolding, reduceShares, deleteHolding } = useStockHoldings()
   const symbols = useMemo(() => holdings.map((item) => item.symbol), [holdings])
-  const { quotes, loading: quotesLoading, error: quotesError, refresh } = useStockQuotes(symbols)
+  const { quotes, refreshing: quotesRefreshing, error: quotesError, refresh } = useStockQuotes(symbols)
   const defaultCurrency = profile?.default_currency ?? 'USD'
 
   function quoteFor(symbol: string) {
@@ -40,6 +40,7 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const [addOpen, setAddOpen] = useState(false)
   const [trade, setTrade] = useState<{ side: StockTradeSide; holdingId?: string } | null>(null)
   const [deleteHoldingId, setDeleteHoldingId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [converted, setConverted] = useState<Record<string, { market: number; cost: number }>>({})
 
   const totalMarket = useMemo(
@@ -65,8 +66,17 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
 
   useEffect(() => {
     let cancelled = false
-    void (async () => {
+    const holdingIds = new Set(holdings.map((item) => item.id))
+    setConverted((prev) => {
+      let changed = false
       const next: Record<string, { market: number; cost: number }> = {}
+      for (const [id, value] of Object.entries(prev)) {
+        if (holdingIds.has(id)) next[id] = value
+        else changed = true
+      }
+      return changed ? next : prev
+    })
+    void (async () => {
       await Promise.all(
         holdings.map(async (item) => {
           const quote = quoteFor(item.symbol)
@@ -78,13 +88,13 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
               marketRaw == null ? Promise.resolve(null) : convertQuoteAmount(marketRaw, from, defaultCurrency),
               convertQuoteAmount(costRaw, item.quote_currency, defaultCurrency),
             ])
-            if (market != null) next[item.id] = { market, cost }
+            if (cancelled || market == null) return
+            setConverted((prev) => ({ ...prev, [item.id]: { market, cost } }))
           } catch {
             /* skip row totals */
           }
         }),
       )
-      if (!cancelled) setConverted(next)
     })()
     return () => {
       cancelled = true
@@ -106,11 +116,11 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
             type="button"
             variant="outline"
             className="rounded-xl"
-            disabled={!online || quotesLoading}
+            disabled={!online}
             title={!online ? t('offline.actionDisabled') : undefined}
-            onClick={() => void refresh()}
+            onClick={() => refresh()}
           >
-            <RefreshCw className={quotesLoading ? 'animate-spin' : undefined} />
+            <RefreshCw className={quotesRefreshing ? 'animate-spin' : undefined} />
             {t('stocks.refresh')}
           </Button>
           <Button
@@ -159,6 +169,8 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
               defaultCurrency={defaultCurrency}
               canTrade={online && accounts.length > 0}
               canDelete={online}
+              expanded={expandedId === item.id}
+              onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
               onBuy={() => setTrade({ side: 'buy', holdingId: item.id })}
               onSell={() => setTrade({ side: 'sell', holdingId: item.id })}
               onDelete={() => setDeleteHoldingId(item.id)}

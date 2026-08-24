@@ -77,7 +77,7 @@ async function fetchAccountsData(): Promise<{
   const [{ data: accountRows, error: accountError }, { data: transferRows, error: transferError }] =
     await Promise.all([
       supabase.from('accounts').select('*').order('created_at', { ascending: true }),
-      supabase.from('transfers').select('*').order('occurred_on', { ascending: false }).limit(20),
+      supabase.from('transfers').select('*').order('occurred_on', { ascending: false }).limit(200),
     ])
 
   if (accountError) throw accountError

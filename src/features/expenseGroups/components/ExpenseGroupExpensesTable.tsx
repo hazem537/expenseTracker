@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { GroupExpense } from '@/features/expenseGroups/hooks/useExpenseGroupDetail'
 import { formatDate } from '@/shared/lib/format'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const PAGE_SIZE = 10
@@ -23,6 +24,7 @@ export function ExpenseGroupExpensesTable({
 }: ExpenseGroupExpensesTableProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(0)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE))
 
@@ -48,7 +50,33 @@ export function ExpenseGroupExpensesTable({
 
   return (
     <div className="space-y-3">
-      <div className="-mx-1 overflow-x-auto rounded-2xl border border-gold-soft/70 bg-surface sm:mx-0">
+      <ul className="space-y-2 md:hidden">
+        {pageRows.map((expense) => (
+          <ExpandableRecord
+            key={expense.id}
+            expanded={expandedId === expense.id}
+            onToggle={() => setExpandedId((id) => (id === expense.id ? null : expense.id))}
+            summary={
+              <p className="truncate text-sm font-medium text-heading">
+                {t(`categories.${expense.category}`)}
+                <span className="ms-1 font-normal text-muted">· {formatDate(expense.occurred_on, lang)}</span>
+              </p>
+            }
+            value={
+              <p className="font-semibold">
+                <MoneyText amount={expense.amount_group} lang={lang} currency={groupCurrency} />
+              </p>
+            }
+          >
+            <p className="text-sm text-muted">
+              {t('expenseGroups.colPaidBy')}: {personName(expense.user_id)}
+            </p>
+            {expense.note ? <p className="text-sm text-muted">{expense.note}</p> : null}
+          </ExpandableRecord>
+        ))}
+      </ul>
+
+      <div className="-mx-1 hidden overflow-x-auto rounded-2xl border border-gold-soft/70 bg-surface md:mx-0 md:block">
         <table className="w-full min-w-[32rem] border-collapse text-start text-sm">
           <thead>
             <tr className="border-b border-gold-soft/60 bg-gold-soft/20 text-xs font-semibold uppercase tracking-wide text-muted">

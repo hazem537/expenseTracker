@@ -26,7 +26,9 @@
     "navSettings": "الإعدادات",
     "navProfile": "الملف الشخصي",
     "setupTitle": "اربط مشروع Supabase",
-    "setupBody": "انسخ .env.example إلى .env وأضف رابط المشروع والمفتاح ثم أعد تشغيل التطبيق."
+    "setupBody": "انسخ .env.example إلى .env وأضف رابط المشروع والمفتاح ثم أعد تشغيل التطبيق.",
+    "showDetails": "إظهار التفاصيل",
+    "hideDetails": "إخفاء التفاصيل"
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -229,6 +231,13 @@
     "sendAmount": "المُرسل",
     "receiveAmount": "المستلم (بعد التحويل)",
     "recentTransfers": "تحويلات أخيرة",
+    "tabAccounts": "الحسابات",
+    "tabTransfers": "التحويلات",
+    "filterFrom": "من",
+    "filterTo": "إلى",
+    "filterAllAccounts": "كل الحسابات",
+    "transfersEmpty": "لا توجد تحويلات بعد.",
+    "filterTransfersEmpty": "لا توجد تحويلات بهذه التصفية.",
     "insufficient": "الرصيد غير كافٍ في هذا الحساب.",
     "needAccountFirst": "أنشئ حساباً أولاً ثم أضف المصروفات منه.",
     "formHint": "الاسم والعملة والرصيد الابتدائي.",

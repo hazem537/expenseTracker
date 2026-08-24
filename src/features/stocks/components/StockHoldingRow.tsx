@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import type { StockHolding } from '@/features/stocks/hooks/useStockHoldings'
 import type { StockQuote } from '@/features/stocks/lib/quote'
 import { MoneyText } from '@/shared/ui/HideMoney'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 
 function pnlClass(value: number) {
   if (value > 0.004) return 'text-emerald-600'
@@ -20,6 +21,8 @@ interface StockHoldingRowProps {
   defaultCurrency: string
   canTrade: boolean
   canDelete?: boolean
+  expanded: boolean
+  onToggle: () => void
   onBuy: () => void
   onSell: () => void
   onDelete: () => void
@@ -34,6 +37,8 @@ export function StockHoldingRow({
   defaultCurrency,
   canTrade,
   canDelete = true,
+  expanded,
+  onToggle,
   onBuy,
   onSell,
   onDelete,
@@ -44,52 +49,43 @@ export function StockHoldingRow({
   const winRatio = values && values.cost > 0 ? ((values.market - values.cost) / values.cost) * 100 : null
 
   return (
-    <li className="space-y-3 rounded-2xl border border-stock/20 bg-surface p-4 shadow-[0_12px_28px_rgba(27,122,82,0.08)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold">
-            {item.symbol}
-            {quote?.name ? <span className="font-normal text-muted"> · {quote.name}</span> : null}
+    <ExpandableRecord
+      className="border-stock/20 shadow-[0_12px_28px_rgba(27,122,82,0.08)]"
+      expanded={expanded}
+      onToggle={onToggle}
+      summary={
+        <p className="truncate font-semibold">
+          {item.symbol}
+          {quote?.name ? <span className="font-normal text-muted"> · {quote.name}</span> : null}
+        </p>
+      }
+      value={
+        winRatio != null ? (
+          <p className={`text-base font-bold ${pnlClass(winRatio)}`}>
+            {winRatio >= 0 ? '+' : ''}
+            {winRatio.toFixed(1)}%
           </p>
-          <p className="text-sm text-muted">
-            {item.shares} × <MoneyText amount={item.avg_cost} lang={lang} currency={item.quote_currency} />
-          </p>
-          <p className="text-sm text-muted">
-            {quote ? (
-              <>
-                {t('stocks.live')}: <MoneyText amount={quote.price} lang={lang} currency={quote.currency} />
-              </>
-            ) : (
-              t('stocks.quoteUnavailable')
-            )}
-            {live != null ? (
-              <>
-                {' · '}
-                <MoneyText amount={live} lang={lang} currency={quote?.currency ?? item.quote_currency} />
-              </>
-            ) : null}
-          </p>
-        </div>
-        <div className="flex items-start gap-1">
-          {winRatio != null ? (
-            <p className={`pt-1 text-lg font-bold ${pnlClass(winRatio)}`}>
-              {winRatio >= 0 ? '+' : ''}
-              {winRatio.toFixed(1)}%
-            </p>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-10 shrink-0 text-red-700"
-            aria-label={t('app.delete')}
-            disabled={!canDelete}
-            onClick={onDelete}
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      </div>
+        ) : undefined
+      }
+    >
+      <p className="text-sm text-muted">
+        {item.shares} × <MoneyText amount={item.avg_cost} lang={lang} currency={item.quote_currency} />
+      </p>
+      <p className="text-sm text-muted">
+        {quote ? (
+          <>
+            {t('stocks.live')}: <MoneyText amount={quote.price} lang={lang} currency={quote.currency} />
+          </>
+        ) : (
+          t('stocks.quoteUnavailable')
+        )}
+        {live != null ? (
+          <>
+            {' · '}
+            <MoneyText amount={live} lang={lang} currency={quote?.currency ?? item.quote_currency} />
+          </>
+        ) : null}
+      </p>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-xl bg-stock-soft/50 p-2">
           <p className="text-xs text-muted">{t('stocks.weight')}</p>
@@ -134,7 +130,18 @@ export function StockHoldingRow({
           <TrendingDown />
           {t('stocks.sell')}
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-10 shrink-0 text-red-700"
+          aria-label={t('app.delete')}
+          disabled={!canDelete}
+          onClick={onDelete}
+        >
+          <Trash2 />
+        </Button>
       </div>
-    </li>
+    </ExpandableRecord>
   )
 }

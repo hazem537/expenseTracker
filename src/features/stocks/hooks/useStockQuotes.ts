@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchStockQuote, type StockQuote } from '@/features/stocks/lib/quote'
 import { queryKeys } from '@/shared/lib/queryKeys'
 
@@ -34,16 +34,18 @@ export function useStockQuotes(symbols: string[]) {
     queryKey: queryKeys.stocks.quotes(sortedSymbols),
     queryFn: () => fetchQuotes(sortedSymbols),
     enabled: sortedSymbols.length > 0,
+    placeholderData: keepPreviousData,
   })
 
-  const refresh = async () => {
+  const refresh = () => {
     if (sortedSymbols.length === 0) return
-    await queryClient.invalidateQueries({ queryKey: queryKeys.stocks.quotes(sortedSymbols) })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.stocks.quotes(sortedSymbols) })
   }
 
   return {
     quotes: query.data ?? {},
-    loading: sortedSymbols.length > 0 && (query.isLoading || query.isFetching),
+    loading: sortedSymbols.length > 0 && query.isLoading,
+    refreshing: query.isFetching && !query.isLoading,
     error: query.error ? 'quotes' : null,
     refresh,
   }

@@ -26,7 +26,9 @@
     "navSettings": "Settings",
     "navProfile": "Profile",
     "setupTitle": "Connect Supabase",
-    "setupBody": "Copy .env.example to .env, add your project URL and anon key, then restart the app."
+    "setupBody": "Copy .env.example to .env, add your project URL and anon key, then restart the app.",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
   },
   "profile": {
     "title": "Profile",
@@ -229,6 +231,13 @@
     "sendAmount": "Send",
     "receiveAmount": "Receive (after conversion)",
     "recentTransfers": "Recent transfers",
+    "tabAccounts": "Accounts",
+    "tabTransfers": "Transfers",
+    "filterFrom": "From",
+    "filterTo": "To",
+    "filterAllAccounts": "All accounts",
+    "transfersEmpty": "No transfers yet.",
+    "filterTransfersEmpty": "No transfers match these filters.",
     "insufficient": "Not enough money in this account.",
     "needAccountFirst": "Create an account first, then add expenses from it.",
     "formHint": "Name, currency, and starting balance.",

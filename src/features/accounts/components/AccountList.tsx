@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountListItem } from '@/features/accounts/components/AccountListItem'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
@@ -34,6 +35,7 @@ export function AccountList({
   hideEmpty = false,
 }: AccountListProps) {
   const { t } = useTranslation()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   return (
     <ul className="space-y-2">
@@ -46,6 +48,8 @@ export function AccountList({
           memberCount={memberCounts[item.id] ?? 1}
           isCreator={Boolean(currentUserId && item.user_id === currentUserId)}
           actionsDisabled={actionsDisabled}
+          expanded={expandedId === item.id}
+          onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
           onAddMoney={onAddMoney}
           onEdit={onEdit}
           onDelete={onDelete}

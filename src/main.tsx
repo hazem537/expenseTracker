@@ -14,6 +14,7 @@ import {
 } from '@/shared/lib/queryClient'
 import { clearOutbox, refreshOutboxCount } from '@/shared/lib/outbox'
 import { flushExpenseOutbox } from '@/shared/lib/flushOutbox'
+import { NotFoundRedirect } from '@/shared/ui/NotFoundRedirect'
 import '@/shared/lib/theme'
 import '@/shared/i18n'
 import './index.css'
@@ -21,6 +22,7 @@ import './index.css'
 const router = createRouter({
   routeTree,
   context: { session: null as Session | null },
+  defaultNotFoundComponent: NotFoundRedirect,
 })
 
 declare module '@tanstack/react-router' {

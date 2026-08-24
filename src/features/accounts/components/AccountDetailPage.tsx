@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { ArrowLeft, BarChart3, LayoutList, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { useAccountDetail, type MemberTotals } from '@/features/accounts/hooks/useAccountDetail'
+import { useAccountDetail, type AccountDeposit, type MemberTotals } from '@/features/accounts/hooks/useAccountDetail'
+import type { Expense } from '@/features/expenses/hooks/useExpenses'
 import { CATEGORY_COLORS } from '@/features/expenses/lib/categories'
 import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
 import { formatDate } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
+import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const MEMBER_COLORS = [
@@ -28,6 +30,90 @@ interface AccountDetailViewProps {
     currency: CurrencyCode
     balance: number
   }) => Promise<void>
+}
+
+function ExpenseRecordList({
+  items,
+  lang,
+  currency,
+  personName,
+}: {
+  items: Expense[]
+  lang: string
+  currency: string
+  personName: (userId: string) => string
+}) {
+  const { t } = useTranslation()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <ExpandableRecord
+          key={item.id}
+          expanded={expandedId === item.id}
+          onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
+          summary={
+            <p className="flex min-w-0 items-center gap-2 truncate text-sm text-muted">
+              <span
+                className="inline-block size-2.5 shrink-0 rounded-full"
+                style={{ background: CATEGORY_COLORS[item.category] }}
+                aria-hidden
+              />
+              <span className="truncate font-medium text-heading">{t(`categories.${item.category}`)}</span>
+              <span aria-hidden>·</span>
+              <span className="shrink-0">{formatDate(item.occurred_on, lang)}</span>
+            </p>
+          }
+          value={
+            <p className="font-semibold">
+              <MoneyText amount={item.amount} lang={lang} currency={currency} />
+            </p>
+          }
+        >
+          <p className="text-sm text-muted">{t('expense.addedBy', { name: personName(item.user_id) })}</p>
+          {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
+        </ExpandableRecord>
+      ))}
+    </ul>
+  )
+}
+
+function DepositRecordList({
+  items,
+  lang,
+  currency,
+  personName,
+}: {
+  items: AccountDeposit[]
+  lang: string
+  currency: string
+  personName: (userId: string) => string
+}) {
+  const { t } = useTranslation()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <ExpandableRecord
+          key={item.id}
+          expanded={expandedId === item.id}
+          onToggle={() => setExpandedId((id) => (id === item.id ? null : item.id))}
+          summary={
+            <p className="truncate text-sm text-muted">{formatDate(item.occurred_on, lang)}</p>
+          }
+          value={
+            <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+              +
+              <MoneyText amount={item.amount} lang={lang} currency={currency} />
+            </p>
+          }
+        >
+          <p className="text-sm text-muted">{t('expense.addedBy', { name: personName(item.user_id) })}</p>
+          {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
+        </ExpandableRecord>
+      ))}
+    </ul>
+  )
 }
 
 function PersonCharts({
@@ -375,31 +461,12 @@ export function AccountDetailView({ accountId, onBack, onUpdateAccount }: Accoun
                 {t('expense.empty')}
               </p>
             ) : (
-              <ul className="space-y-2">
-                {expenses.map((item) => (
-                  <li
-                    key={item.id}
-                    className="rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]"
-                  >
-                    <p className="font-semibold">
-                      <MoneyText amount={item.amount} lang={lang} currency={account.currency} />
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                      <span
-                        className="inline-block size-2.5 rounded-full"
-                        style={{ background: CATEGORY_COLORS[item.category] }}
-                        aria-hidden
-                      />
-                      {t(`categories.${item.category}`)}
-                      <span aria-hidden>·</span>
-                      {formatDate(item.occurred_on, lang)}
-                      <span aria-hidden>·</span>
-                      {t('expense.addedBy', { name: personName(item.user_id) })}
-                    </p>
-                    {item.note ? <p className="mt-1 text-sm text-muted">{item.note}</p> : null}
-                  </li>
-                ))}
-              </ul>
+              <ExpenseRecordList
+                items={expenses}
+                lang={lang}
+                currency={account.currency}
+                personName={personName}
+              />
             )}
           </section>
 
@@ -410,24 +477,12 @@ export function AccountDetailView({ accountId, onBack, onUpdateAccount }: Accoun
                 {t('accounts.noDeposits')}
               </p>
             ) : (
-              <ul className="space-y-2">
-                {deposits.map((item) => (
-                  <li
-                    key={item.id}
-                    className="rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]"
-                  >
-                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                      +
-                      <MoneyText amount={item.amount} lang={lang} currency={account.currency} />
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-                      {formatDate(item.occurred_on, lang)}
-                      <span aria-hidden>·</span>
-                      {t('expense.addedBy', { name: personName(item.user_id) })}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              <DepositRecordList
+                items={deposits}
+                lang={lang}
+                currency={account.currency}
+                personName={personName}
+              />
             )}
           </section>
         </>

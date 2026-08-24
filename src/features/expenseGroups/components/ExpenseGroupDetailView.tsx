@@ -174,6 +174,7 @@ export function ExpenseGroupDetailView({
           <GroupExpenseForm
             open={addOpen}
             groupId={group.id}
+            groupCurrency={group.currency}
             accounts={accounts}
             defaultCurrency={defaultCurrency}
             actionsDisabled={!online}

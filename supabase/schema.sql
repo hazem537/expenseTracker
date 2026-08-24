@@ -64,6 +64,12 @@ alter table public.expenses
 alter table public.expenses
   add column if not exists fx_rate numeric(18, 8);
 
+alter table public.expenses
+  add column if not exists amount_group numeric(12, 2);
+
+alter table public.expenses
+  add column if not exists group_fx_rate numeric(18, 8);
+
 create table if not exists public.transfers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

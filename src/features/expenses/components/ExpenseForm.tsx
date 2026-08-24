@@ -13,8 +13,9 @@ import { useOnlineStatus } from '@/shared/lib/online'
 interface ExpenseFormProps {
   initial?: Expense | null
   accounts: Account[]
-  groups?: { id: string; name: string }[]
+  groups?: { id: string; name: string; currency?: string }[]
   lockGroupId?: string
+  groupCurrency?: string
   defaultCurrency: CurrencyCode
   onSubmit: (input: ExpenseInput) => Promise<void>
   onCancel: () => void
@@ -29,6 +30,7 @@ export function ExpenseForm({
   accounts,
   groups = [],
   lockGroupId,
+  groupCurrency,
   defaultCurrency,
   onSubmit,
   onCancel,
@@ -91,7 +93,7 @@ export function ExpenseForm({
           setFxBusy(true)
           setFxError(null)
           try {
-            const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency)
+            const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency, occurredOn)
             inBase = convertAmount(value, rateToBase)
             if (!cancelled) {
               setConvertedAmount(value)
@@ -129,11 +131,11 @@ export function ExpenseForm({
       setFxBusy(true)
       setFxError(null)
       try {
-        const rateToAccount = await fetchExchangeRate(paidCurrency, account.currency)
+        const rateToAccount = await fetchExchangeRate(paidCurrency, account.currency, occurredOn)
         const inAccount = convertAmount(value, rateToAccount)
         let inBase = inAccount
         if (account.currency !== defaultCurrency) {
-          const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency)
+          const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency, occurredOn)
           inBase = convertAmount(inAccount, rateToBase)
         }
         if (!cancelled) {
@@ -156,7 +158,7 @@ export function ExpenseForm({
     return () => {
       cancelled = true
     }
-  }, [paidAmount, paidCurrency, account, defaultCurrency, online, t])
+  }, [paidAmount, paidCurrency, account, defaultCurrency, online, occurredOn, t])
 
   function setBusy(next: boolean) {
     setSaving(next)
@@ -173,11 +175,26 @@ export function ExpenseForm({
     setBusy(true)
     setError(null)
     try {
+      const selectedGroupCurrency =
+        groupCurrency ?? groups.find((group) => group.id === groupId)?.currency ?? null
+      let amountGroup: number | null = null
+      let groupFxRate: number | null = null
+      if (groupId && selectedGroupCurrency && account) {
+        if (account.currency === selectedGroupCurrency) {
+          amountGroup = convertedAmount
+          groupFxRate = 1
+        } else {
+          groupFxRate = await fetchExchangeRate(account.currency, selectedGroupCurrency, occurredOn)
+          amountGroup = convertAmount(convertedAmount, groupFxRate)
+        }
+      }
       await onSubmit({
         account_id: accountId,
         amount: convertedAmount,
         amount_base: convertedBase,
         fx_rate: convertedAmount === 0 ? 1 : convertedBase / convertedAmount,
+        amount_group: amountGroup,
+        group_fx_rate: groupFxRate,
         category,
         occurred_on: occurredOn,
         note,

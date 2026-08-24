@@ -28,28 +28,30 @@ function mapExpense(row: Record<string, unknown>): Expense {
     amount,
     amount_base: amountBase,
     fx_rate: row.fx_rate == null ? 1 : Number(row.fx_rate),
+    amount_group: row.amount_group == null ? null : Number(row.amount_group),
+    group_fx_rate: row.group_fx_rate == null ? null : Number(row.group_fx_rate),
     account_id: String(row.account_id ?? ''),
     group_id: row.group_id == null ? null : String(row.group_id),
   }
 }
 
-async function fetchRates(fromCurrencies: string[], target: string) {
-  const cache = new Map<string, number>()
-  const unique = [...new Set(fromCurrencies.filter(Boolean))]
-  await Promise.all(
-    unique.map(async (from) => {
-      if (from === target) {
-        cache.set(from, 1)
-        return
-      }
-      try {
-        cache.set(from, await fetchExchangeRate(from, target))
-      } catch {
-        cache.set(from, 1)
-      }
-    }),
-  )
-  return cache
+async function rateForDate(
+  cache: Map<string, number>,
+  from: string,
+  to: string,
+  onDate: string,
+) {
+  const key = `${from}|${to}|${onDate}`
+  const hit = cache.get(key)
+  if (hit != null) return hit
+  try {
+    const rate = await fetchExchangeRate(from, to, onDate)
+    cache.set(key, rate)
+    return rate
+  } catch {
+    cache.set(key, 1)
+    return 1
+  }
 }
 
 async function fetchGroupDetail(groupId: string): Promise<{
@@ -127,16 +129,17 @@ async function fetchGroupDetail(groupId: string): Promise<{
     }
   }
 
-  const sourceCurrencies = expenses.map(
-    (item) => currencyByAccount.get(item.account_id) ?? group.currency,
-  )
-  const rates = await fetchRates(sourceCurrencies, group.currency)
-
-  const groupExpenses: GroupExpense[] = expenses.map((expense) => {
+  const rateCache = new Map<string, number>()
+  const groupExpenses: GroupExpense[] = []
+  for (const expense of expenses) {
+    if (expense.amount_group != null) {
+      groupExpenses.push({ ...expense, amount_group: expense.amount_group })
+      continue
+    }
     const from = currencyByAccount.get(expense.account_id) ?? group.currency
-    const rate = rates.get(from) ?? 1
-    return { ...expense, amount_group: convertAmount(expense.amount, rate) }
-  })
+    const rate = await rateForDate(rateCache, from, group.currency, expense.occurred_on)
+    groupExpenses.push({ ...expense, amount_group: convertAmount(expense.amount, rate) })
+  }
 
   const paidByUser: Record<string, number> = {}
   for (const member of members) {

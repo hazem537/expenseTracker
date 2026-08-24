@@ -20,6 +20,8 @@ export interface Expense {
   amount: number
   amount_base: number
   fx_rate: number
+  amount_group?: number | null
+  group_fx_rate?: number | null
   category: Category
   occurred_on: string
   note: string | null
@@ -32,6 +34,8 @@ export interface ExpenseInput {
   amount: number
   amount_base: number
   fx_rate: number
+  amount_group?: number | null
+  group_fx_rate?: number | null
   category: Category
   occurred_on: string
   note: string
@@ -62,6 +66,8 @@ function mapExpense(row: Record<string, unknown>): Expense {
     amount,
     amount_base: amountBase,
     fx_rate: row.fx_rate == null ? 1 : Number(row.fx_rate),
+    amount_group: row.amount_group == null ? null : Number(row.amount_group),
+    group_fx_rate: row.group_fx_rate == null ? null : Number(row.group_fx_rate),
     account_id: String(row.account_id ?? ''),
     group_id: row.group_id == null ? null : String(row.group_id),
   }
@@ -134,6 +140,8 @@ export function useExpenses(range?: { start: string; end: string }) {
         amount: input.amount,
         amount_base: input.amount_base,
         fx_rate: input.fx_rate,
+        amount_group: input.amount_group ?? null,
+        group_fx_rate: input.group_fx_rate ?? null,
         category: input.category,
         occurred_on: input.occurred_on,
         note: input.note.trim() || null,
@@ -184,6 +192,8 @@ export function useExpenses(range?: { start: string; end: string }) {
           amount: input.amount,
           amount_base: input.amount_base,
           fx_rate: input.fx_rate,
+          amount_group: input.group_id ? (input.amount_group ?? null) : null,
+          group_fx_rate: input.group_id ? (input.group_fx_rate ?? null) : null,
           category: input.category,
           occurred_on: input.occurred_on,
           note: input.note.trim() || null,

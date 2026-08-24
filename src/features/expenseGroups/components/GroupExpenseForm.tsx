@@ -15,6 +15,7 @@ import type { CurrencyCode } from '@/shared/lib/currencies'
 interface GroupExpenseFormProps {
   open: boolean
   groupId: string
+  groupCurrency: string
   accounts: Account[]
   defaultCurrency: CurrencyCode
   actionsDisabled?: boolean
@@ -25,6 +26,7 @@ interface GroupExpenseFormProps {
 export function GroupExpenseForm({
   open,
   groupId,
+  groupCurrency,
   accounts,
   defaultCurrency,
   actionsDisabled = false,
@@ -66,6 +68,7 @@ export function GroupExpenseForm({
           <ExpenseForm
             accounts={accounts}
             lockGroupId={groupId}
+            groupCurrency={groupCurrency}
             defaultCurrency={defaultCurrency}
             onBusyChange={(busy) => {
               busyRef.current = busy

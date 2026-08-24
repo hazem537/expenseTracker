@@ -1,18 +1,30 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Coins, Home, Landmark, PieChart, Receipt, Settings, TrendingUp } from 'lucide-react'
+import { Coins, Home, Landmark, Receipt, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useOnlineStatus } from '@/shared/lib/online'
 
 const items = [
-  { to: '/', labelKey: 'app.navDashboard', icon: Home, offlineOk: true },
-  { to: '/summary', labelKey: 'app.navSummary', icon: PieChart, offlineOk: false },
+  { to: '/home', labelKey: 'app.navDashboard', icon: Home, offlineOk: true, exact: true },
   { to: '/expenses', labelKey: 'app.navExpenses', icon: Receipt, offlineOk: true },
   { to: '/accounts', labelKey: 'app.navAccounts', icon: Landmark, offlineOk: true },
-  { to: '/gold', labelKey: 'app.navGold', icon: Coins, offlineOk: false },
-  { to: '/stocks', labelKey: 'app.navStocks', icon: TrendingUp, offlineOk: false },
-  { to: '/settings', labelKey: 'app.navSettings', icon: Settings, offlineOk: true },
+  { to: '/assets', labelKey: 'app.navAssets', icon: Coins, offlineOk: false },
+  { to: '/profile', labelKey: 'app.navProfile', icon: UserRound, offlineOk: true },
 ] as const
+
+function isActivePath(pathname: string, to: string, exact?: boolean) {
+  if (exact || to === '/home') return pathname === '/home'
+  if (to === '/expenses') return pathname.startsWith('/expenses') || pathname.startsWith('/groups')
+  if (to === '/assets') return pathname.startsWith('/assets') || pathname.startsWith('/gold') || pathname.startsWith('/stocks')
+  if (to === '/profile') {
+    return (
+      pathname.startsWith('/profile') ||
+      pathname.startsWith('/settings') ||
+      pathname.startsWith('/summary')
+    )
+  }
+  return pathname.startsWith(to)
+}
 
 export function BottomNav() {
   const { t } = useTranslation()
@@ -25,7 +37,7 @@ export function BottomNav() {
       aria-label={t('app.name')}
     >
       {items.map((item) => {
-        const isActive = item.to === '/' ? pathname === '/' : pathname.startsWith(item.to)
+        const isActive = isActivePath(pathname, item.to, 'exact' in item)
         const Icon = item.icon
         const label = t(item.labelKey)
         const disabled = !online && !item.offlineOk

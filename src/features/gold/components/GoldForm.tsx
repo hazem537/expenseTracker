@@ -18,6 +18,7 @@ export function GoldForm({ onSubmit, onCancel }: GoldFormProps) {
   const { t } = useTranslation()
   const [grams, setGrams] = useState('')
   const [karat, setKarat] = useState<Karat>(24)
+  const [avgCost, setAvgCost] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,14 +26,19 @@ export function GoldForm({ onSubmit, onCancel }: GoldFormProps) {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const gramsValue = Number(grams)
+    const avgCostValue = Number(avgCost)
     if (!Number.isFinite(gramsValue) || gramsValue <= 0) {
+      setError(t('expense.error'))
+      return
+    }
+    if (!Number.isFinite(avgCostValue) || avgCostValue < 0) {
       setError(t('expense.error'))
       return
     }
     setSaving(true)
     setError(null)
     try {
-      await onSubmit({ grams: gramsValue, karat, note })
+      await onSubmit({ grams: gramsValue, karat, avgCost: avgCostValue, note })
     } catch {
       setError(t('expense.error'))
       setSaving(false)
@@ -50,6 +56,7 @@ export function GoldForm({ onSubmit, onCancel }: GoldFormProps) {
           step="0.001"
           inputMode="decimal"
           required
+          className="font-nums"
           value={grams}
           onChange={(e) => setGrams(e.target.value)}
         />
@@ -68,6 +75,21 @@ export function GoldForm({ onSubmit, onCancel }: GoldFormProps) {
             </option>
           ))}
         </select>
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="gold-avg-cost">{t('gold.avgCost')}</Label>
+        <p className="text-xs text-muted">{t('gold.avgCostHint')}</p>
+        <Input
+          id="gold-avg-cost"
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          required
+          className="font-nums"
+          value={avgCost}
+          onChange={(e) => setAvgCost(e.target.value)}
+        />
       </div>
       <div className="space-y-1">
         <Label htmlFor="gold-note">

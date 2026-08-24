@@ -1,9 +1,15 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
 import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
-import { isSupabaseConfigured, supabase, authEmailRedirectTo } from '@/shared/lib/supabase'
+import {
+  isSupabaseConfigured,
+  supabase,
+  authEmailRedirectTo,
+  authPasswordResetRedirectTo,
+} from '@/shared/lib/supabase'
 import iconMail from '../assets/icon-mail.svg'
 import iconLock from '../assets/icon-lock.svg'
 import iconEye from '../assets/icon-eye.svg'
@@ -18,6 +24,23 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  async function handleForgotPassword() {
+    if (!supabase) return
+    setError(null)
+    setInfo(null)
+    if (!email.trim()) {
+      setError(t('auth.forgotNeedEmail'))
+      return
+    }
+    setBusy(true)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: authPasswordResetRedirectTo(),
+    })
+    if (resetError) setError(t('auth.forgotError'))
+    else setInfo(t('auth.forgotOk'))
+    setBusy(false)
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -46,9 +69,14 @@ export function LoginPage() {
 
   return (
     <div className="app-shell flex min-h-dvh flex-col p-4">
-      <div className="flex items-center justify-end gap-1">
-        <ThemeToggle />
-        <LanguageToggle />
+      <div className="flex items-center justify-between gap-1">
+        <Link to="/" className="px-2 text-sm font-medium text-muted hover:text-heading">
+          {t('app.name')}
+        </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <LanguageToggle />
+        </div>
       </div>
       <div className="flex flex-1 items-center justify-center">
         <div className="w-full max-w-96">
@@ -95,7 +123,14 @@ export function LoginPage() {
                     {t('auth.password')}
                   </label>
                   {mode === 'login' ? (
-                    <span className="text-sm leading-5 text-heading">{t('auth.forgot')}</span>
+                    <button
+                      type="button"
+                      className="text-sm leading-5 text-heading underline disabled:opacity-50"
+                      disabled={busy || !isSupabaseConfigured}
+                      onClick={() => void handleForgotPassword()}
+                    >
+                      {t('auth.forgot')}
+                    </button>
                   ) : null}
                 </div>
                 <div className="relative">

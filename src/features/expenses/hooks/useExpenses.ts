@@ -16,6 +16,7 @@ export interface Expense {
   id: string
   user_id: string
   account_id: string
+  group_id?: string | null
   amount: number
   amount_base: number
   fx_rate: number
@@ -34,6 +35,7 @@ export interface ExpenseInput {
   category: Category
   occurred_on: string
   note: string
+  group_id?: string | null
 }
 
 async function adjustBalance(accountId: string, delta: number) {
@@ -61,6 +63,7 @@ function mapExpense(row: Record<string, unknown>): Expense {
     amount_base: amountBase,
     fx_rate: row.fx_rate == null ? 1 : Number(row.fx_rate),
     account_id: String(row.account_id ?? ''),
+    group_id: row.group_id == null ? null : String(row.group_id),
   }
 }
 
@@ -120,12 +123,14 @@ export function useExpenses(range?: { start: string; end: string }) {
 
   async function createExpense(input: ExpenseInput) {
     if (!isOnline()) {
+      if (input.group_id) throw new Error('OFFLINE')
       const item = await enqueueCreateExpense(input)
       await refreshOutboxCount()
       const optimistic: Expense = {
         id: item.id,
         user_id: 'local',
         account_id: input.account_id,
+        group_id: input.group_id ?? null,
         amount: input.amount,
         amount_base: input.amount_base,
         fx_rate: input.fx_rate,
@@ -143,6 +148,9 @@ export function useExpenses(range?: { start: string; end: string }) {
     }
     await createExpenseOnServer(input)
     invalidateRelated()
+    if (input.group_id) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenseGroups.all })
+    }
   }
 
   const updateMutation = useMutation({
@@ -179,6 +187,7 @@ export function useExpenses(range?: { start: string; end: string }) {
           category: input.category,
           occurred_on: input.occurred_on,
           note: input.note.trim() || null,
+          group_id: input.group_id ?? null,
         })
         .eq('id', id)
       if (updateError) {

@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { SummaryPage } from '@/features/dashboard/components/SummaryPage'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/summary')({
-  component: SummaryPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/profile', search: { tab: 'summary' } })
+  },
 })

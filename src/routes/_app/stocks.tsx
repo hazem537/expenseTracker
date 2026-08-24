@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { StocksPage } from '@/features/stocks'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/stocks')({
-  component: StocksPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/assets', search: { tab: 'stocks' } })
+  },
 })

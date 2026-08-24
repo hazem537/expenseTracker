@@ -28,12 +28,13 @@ export function MoneyText({
   if (hidden) return <span>••••</span>
   const value = ledger && currency
     ? `${currency} ${new Intl.NumberFormat(localeForLang(lang), {
+        numberingSystem: 'latn',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format(amount)}`
     : formatAmount(amount, lang, currency)
   return (
-    <span>
+    <span className="font-nums">
       {prefix}
       {value}
     </span>

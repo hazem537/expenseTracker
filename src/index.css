@@ -17,6 +17,7 @@
   --color-stock-soft: var(--stock-soft);
   --color-surface: var(--surface);
   --font-header: var(--header-font);
+  --font-title: var(--title-font);
 }
 
 :root {
@@ -34,6 +35,7 @@
   --stock-soft: #dceee5;
   --surface: #fffdf8;
   --header-font: 'Cormorant Garamond', 'Times New Roman', serif;
+  --title-font: 'Rakkas', Georgia, serif;
 }
 
 html.dark {
@@ -54,6 +56,15 @@ html.dark {
 
 html {
   font-family: 'IBM Plex Sans', 'Cairo', system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+
+.font-nums,
+input[type='number'],
+input[type='date'] {
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
 html[lang='ar'] {
@@ -61,6 +72,7 @@ html[lang='ar'] {
   font-size: 16.5px;
   letter-spacing: 0;
   --header-font: 'El Messiri', 'Cairo', sans-serif;
+  --title-font: 'Rakkas', 'Cairo', serif;
 }
 
 html[lang='ar'] h1,
@@ -69,6 +81,14 @@ html[lang='ar'] h3 {
   font-family: 'Amiri', 'Cairo', serif;
   font-weight: 700;
   line-height: 1.35;
+}
+
+html[lang='ar'] .landing-page h1,
+html[lang='ar'] .landing-page h2,
+html[lang='ar'] .landing-page h3 {
+  font-family: var(--title-font);
+  font-weight: 400;
+  line-height: 1.45;
 }
 
 header {
@@ -91,4 +111,94 @@ html.dark .app-shell {
   background:
     radial-gradient(1100px 420px at 50% -120px, rgba(224, 195, 106, 0.2), transparent 58%),
     linear-gradient(180deg, #141b2b 0%, #080b12 48%, #06080e 100%);
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes landing-orb {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(12px, -16px) scale(1.08);
+    opacity: 1;
+  }
+}
+
+.landing-fade {
+  animation: landing-fade-up 0.8s ease both;
+}
+
+.landing-fade-delay {
+  animation-delay: 0.15s;
+}
+
+.landing-card {
+  animation: landing-fade-up 0.7s ease both;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.landing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px rgba(201, 162, 39, 0.16);
+}
+
+.landing-float {
+  animation: landing-float 5.5s ease-in-out infinite;
+}
+
+.landing-orb {
+  animation: landing-orb 8s ease-in-out infinite;
+}
+
+.landing-page #top,
+.landing-page #features,
+.landing-page #services {
+  scroll-margin-top: 5rem;
+}
+
+@supports (animation-timeline: view()) {
+  .landing-card,
+  .landing-page section .landing-fade {
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .landing-fade,
+  .landing-card,
+  .landing-float,
+  .landing-orb {
+    animation: none !important;
+  }
+
+  .landing-card:hover {
+    transform: none;
+  }
 }

@@ -37,18 +37,22 @@ export function localeForLang(lang: string) {
   return lang.startsWith('ar') ? 'ar-EG' : 'en-US'
 }
 
+const LATIN_DIGITS = { numberingSystem: 'latn' as const }
+
 export function formatAmount(amount: number, lang: string, currency?: string) {
   if (isMoneyHidden()) return HIDDEN_MONEY
   if (currency) {
     return new Intl.NumberFormat(localeForLang(lang), {
       style: 'currency',
       currency,
+      numberingSystem: LATIN_DIGITS.numberingSystem,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount)
   }
   return new Intl.NumberFormat(localeForLang(lang), {
     style: 'decimal',
+    numberingSystem: LATIN_DIGITS.numberingSystem,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
@@ -56,6 +60,7 @@ export function formatAmount(amount: number, lang: string, currency?: string) {
 
 export function formatDate(isoDate: string, lang: string) {
   return new Intl.DateTimeFormat(localeForLang(lang), {
+    numberingSystem: LATIN_DIGITS.numberingSystem,
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -64,6 +69,7 @@ export function formatDate(isoDate: string, lang: string) {
 
 export function formatMonthLabel(year: number, monthIndex: number, lang: string) {
   return new Intl.DateTimeFormat(localeForLang(lang), {
+    numberingSystem: LATIN_DIGITS.numberingSystem,
     month: 'long',
     year: 'numeric',
   }).format(new Date(year, monthIndex, 1))

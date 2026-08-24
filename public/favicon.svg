@@ -1,4 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#131b2e"/>
-  <path fill="#c9a227" d="M256 88 96 176v40h320v-40L256 88zm-140 248h48v80h-48v-80zm96 0h48v80h-48v-80zm96 0h48v80h-48v-80zm96 0h48v80h-48v-80zM88 424h336v32H88z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="bankKhana">
+  <defs>
+    <linearGradient id="gold" x1="110" y1="70" x2="400" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6e3a8"/>
+      <stop offset="0.55" stop-color="#e4c56a"/>
+      <stop offset="1" stop-color="#c9a227"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="#0c1424"/>
+  <rect x="348" y="108" width="46" height="86" rx="10" fill="url(#gold)"/>
+  <path fill="url(#gold)" d="M256 78 446 250H66Z"/>
+  <path fill="url(#gold)" d="M118 236h276v196c0 18-14 32-32 32H150c-18 0-32-14-32-32V236Z"/>
+  <path fill="#0c1424" d="M196 300h120v164H196z"/>
+  <circle cx="256" cy="318" r="58" fill="url(#gold)"/>
+  <path fill="#0c1424" d="M256 278c-18 0-30 10-30 24 0 10 6 16 20 20l8 2c8 2 12 4 12 10 0 8-8 12-18 12-10 0-18-4-24-10v16c8 6 16 10 26 10v12h16v-12c18-2 30-12 30-26 0-12-8-18-22-22l-8-2c-8-2-10-4-10-8 0-6 6-10 14-10 8 0 16 4 20 8v-16c-6-4-14-8-24-8v-12h-16v12z"/>
+  <circle cx="168" cy="400" r="28" fill="#0c1424"/>
+  <circle cx="168" cy="400" r="20" fill="url(#gold)"/>
+  <circle cx="344" cy="400" r="28" fill="#0c1424"/>
+  <circle cx="344" cy="400" r="20" fill="url(#gold)"/>
 </svg>

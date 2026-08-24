@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { SettingsPage } from '@/features/settings'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/settings')({
-  component: SettingsPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/profile', search: { tab: 'settings' } })
+  },
 })

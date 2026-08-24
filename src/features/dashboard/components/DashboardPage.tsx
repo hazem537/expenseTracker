@@ -6,6 +6,7 @@ import { AddExpenseFab } from '@/features/dashboard/components/AddExpenseFab'
 import { DashboardMonthHeader } from '@/features/dashboard/components/DashboardMonthHeader'
 import { MonthStatCards } from '@/features/dashboard/components/MonthStatCards'
 import { ExpenseFormDialog, useExpenses } from '@/features/expenses'
+import { useExpenseGroups } from '@/features/expenseGroups'
 import { useProfile } from '@/features/settings'
 import { monthRange } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
@@ -22,6 +23,7 @@ export function DashboardPage() {
   const range = monthRange()
   const { profile } = useProfile()
   const { accounts, createAccount } = useAccounts()
+  const { groups } = useExpenseGroups()
   const { expenses, loading, error, createExpense } = useExpenses({
     start: range.start,
     end: range.end,
@@ -81,6 +83,7 @@ export function DashboardPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         accounts={accounts}
+        groups={groups}
         defaultCurrency={currency}
         onSubmit={async (input) => {
           await createExpense(input)

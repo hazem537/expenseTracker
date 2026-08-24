@@ -8,6 +8,7 @@ export interface GoldHolding {
   user_id: string
   grams: number
   karat: Karat
+  avg_cost: number
   note: string | null
   created_at: string
 }
@@ -15,7 +16,14 @@ export interface GoldHolding {
 export interface GoldHoldingInput {
   grams: number
   karat: Karat
+  avgCost: number
   note: string
+}
+
+function weightedAvg(gramsA: number, costA: number, gramsB: number, costB: number) {
+  const total = gramsA + gramsB
+  if (total <= 0) return 0
+  return Math.round(((gramsA * costA + gramsB * costB) / total) * 1_000_000) / 1_000_000
 }
 
 async function fetchGoldHoldings(): Promise<GoldHolding[]> {
@@ -29,6 +37,7 @@ async function fetchGoldHoldings(): Promise<GoldHolding[]> {
     ...row,
     grams: Number(row.grams),
     karat: Number(row.karat) as Karat,
+    avg_cost: Number(row.avg_cost ?? 0),
   })) as GoldHolding[]
 }
 
@@ -58,6 +67,7 @@ export function useGoldHoldings() {
         user_id: user.id,
         grams: input.grams,
         karat: input.karat,
+        avg_cost: input.avgCost,
         note: input.note.trim() || null,
       })
       if (insertError) throw insertError
@@ -86,14 +96,16 @@ export function useGoldHoldings() {
   })
 
   const addGrams = useMutation({
-    mutationFn: async (input: { karat: Karat; grams: number; note?: string }) => {
+    mutationFn: async (input: { karat: Karat; grams: number; avgCost?: number; note?: string }) => {
       if (!supabase) throw new Error('Supabase is not configured')
+      const paid = input.avgCost ?? 0
       const existing = holdings.find((item) => item.karat === input.karat)
       if (existing) {
         const next = Math.round((existing.grams + input.grams) * 1000) / 1000
+        const avg_cost = weightedAvg(existing.grams, existing.avg_cost, input.grams, paid)
         const { error: updateError } = await supabase
           .from('gold_holdings')
-          .update({ grams: next })
+          .update({ grams: next, avg_cost })
           .eq('id', existing.id)
         if (updateError) throw updateError
       } else {
@@ -105,6 +117,7 @@ export function useGoldHoldings() {
           user_id: user.id,
           grams: input.grams,
           karat: input.karat,
+          avg_cost: paid,
           note: (input.note ?? '').trim() || null,
         })
         if (insertError) throw insertError
@@ -132,7 +145,8 @@ export function useGoldHoldings() {
     error: query.error ? (query.error as Error).message : null,
     reload,
     createHolding: (input: GoldHoldingInput) => createHolding.mutateAsync(input),
-    addGrams: (input: { karat: Karat; grams: number; note?: string }) => addGrams.mutateAsync(input),
+    addGrams: (input: { karat: Karat; grams: number; avgCost?: number; note?: string }) =>
+      addGrams.mutateAsync(input),
     reduceHolding: (id: string, gramsToRemove: number) =>
       reduceHolding.mutateAsync({ id, gramsToRemove }),
     deleteHolding: (id: string) => deleteHolding.mutateAsync(id),

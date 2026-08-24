@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { GoldPage } from '@/features/gold'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/gold')({
-  component: GoldPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/assets', search: { tab: 'gold' } })
+  },
 })

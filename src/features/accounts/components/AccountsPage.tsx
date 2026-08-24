@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { AccountDetailView } from '@/features/accounts/components/AccountDetailPage'
 import { AccountFormDialog } from '@/features/accounts/components/AccountFormDialog'
 import { AccountList } from '@/features/accounts/components/AccountList'
 import { AccountsHeader } from '@/features/accounts/components/AccountsHeader'
 import { AddMoneyDialog } from '@/features/accounts/components/AddMoneyDialog'
+import { JoinSharedDialog } from '@/features/accounts/components/JoinSharedDialog'
 import { RecentTransfers } from '@/features/accounts/components/RecentTransfers'
+import { ShareAccountDialog } from '@/features/accounts/components/ShareAccountDialog'
 import { TransferDialog } from '@/features/accounts/components/TransferDialog'
 import { useAccounts, type Account } from '@/features/accounts/hooks/useAccounts'
 import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
@@ -18,18 +21,59 @@ export function AccountsPage() {
   const { t, i18n } = useTranslation()
   const online = useOnlineStatus()
   const { profile } = useProfile()
-  const { accounts, transfers, loading, error, createAccount, addMoney, updateAccount, deleteAccount, transfer } =
-    useAccounts()
+  const {
+    accounts,
+    transfers,
+    loading,
+    error,
+    currentUserId,
+    membersByAccount,
+    createAccount,
+    addMoney,
+    updateAccount,
+    deleteAccount,
+    transfer,
+    enableSharing,
+    regenerateShareCode,
+    disableSharing,
+    joinByShareCode,
+    leaveSharedAccount,
+  } = useAccounts()
   const lang = i18n.language
   const defaultCurrency = profile?.default_currency ?? 'USD'
 
   const [createOpen, setCreateOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
+  const [joinOpen, setJoinOpen] = useState(false)
   const [depositAccount, setDepositAccount] = useState<Account | null>(null)
   const [editAccount, setEditAccount] = useState<Account | null>(null)
+  const [shareAccount, setShareAccount] = useState<Account | null>(null)
   const [deleteAccountTarget, setDeleteAccountTarget] = useState<Account | null>(null)
+  const [activityAccountId, setActivityAccountId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [currencyFilter, setCurrencyFilter] = useState('')
   const [weights, setWeights] = useState<Record<string, number>>({})
+
+  const usedCurrencies = useMemo(() => {
+    return Array.from(new Set(accounts.map((item) => item.currency))).sort()
+  }, [accounts])
+
+  const visibleAccounts = useMemo(() => {
+    if (!currencyFilter) return accounts
+    return accounts.filter((item) => item.currency === currencyFilter)
+  }, [accounts, currencyFilter])
+
+  const memberCounts = useMemo(() => {
+    const next: Record<string, number> = {}
+    for (const account of accounts) {
+      next[account.id] = membersByAccount[account.id]?.length ?? 1
+    }
+    return next
+  }, [accounts, membersByAccount])
+
+  const shareAccountLive = shareAccount
+    ? (accounts.find((a) => a.id === shareAccount.id) ?? shareAccount)
+    : null
 
   useEffect(() => {
     if (!online) return
@@ -65,6 +109,21 @@ export function AccountsPage() {
     }
   }, [accounts, defaultCurrency, online])
 
+  if (activityAccountId) {
+    return (
+      <div className="space-y-6">
+        {!isSupabaseConfigured ? <SetupNotice /> : null}
+        <AccountDetailView
+          accountId={activityAccountId}
+          onBack={() => setActivityAccountId(null)}
+          onUpdateAccount={async (input) => {
+            await updateAccount(activityAccountId, input)
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
@@ -73,19 +132,50 @@ export function AccountsPage() {
         actionsDisabled={!online}
         onAddAccount={() => setCreateOpen(true)}
         onTransfer={() => setTransferOpen(true)}
+        onJoin={() => setJoinOpen(true)}
       />
+      {usedCurrencies.length > 1 ? (
+        <div>
+          <label className="mb-1 block text-sm font-medium text-heading" htmlFor="account-currency-filter">
+            {t('accounts.filterCurrency')}
+          </label>
+          <select
+            id="account-currency-filter"
+            className="min-h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-base sm:max-w-xs"
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value)}
+          >
+            <option value="">{t('accounts.filterAllCurrencies')}</option>
+            {usedCurrencies.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
       {loading ? <p>{t('app.loading')}</p> : null}
       {error && online ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {actionError ? <p className="text-red-600">{actionError}</p> : null}
+      {!loading && accounts.length > 0 && visibleAccounts.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
+          {t('accounts.filterEmpty')}
+        </p>
+      ) : null}
       <AccountList
-        accounts={accounts}
+        accounts={visibleAccounts}
         lang={lang}
         loading={loading}
         weights={weights}
+        memberCounts={memberCounts}
+        currentUserId={currentUserId}
         actionsDisabled={!online}
         onAddMoney={setDepositAccount}
         onEdit={setEditAccount}
         onDelete={setDeleteAccountTarget}
+        onShare={setShareAccount}
+        onViewActivity={(account) => setActivityAccountId(account.id)}
+        hideEmpty={Boolean(currencyFilter)}
       />
       <RecentTransfers transfers={transfers} accounts={accounts} lang={lang} />
       <AccountFormDialog
@@ -120,6 +210,28 @@ export function AccountsPage() {
           if (!open) setDepositAccount(null)
         }}
         onSubmit={addMoney}
+      />
+      <JoinSharedDialog
+        open={joinOpen}
+        actionsDisabled={!online}
+        onOpenChange={setJoinOpen}
+        onSubmit={async (code) => {
+          await joinByShareCode(code)
+        }}
+      />
+      <ShareAccountDialog
+        account={shareAccountLive}
+        members={shareAccountLive ? (membersByAccount[shareAccountLive.id] ?? []) : []}
+        currentUserId={currentUserId}
+        open={shareAccount != null}
+        actionsDisabled={!online}
+        onOpenChange={(open) => {
+          if (!open) setShareAccount(null)
+        }}
+        onEnable={enableSharing}
+        onRegenerate={regenerateShareCode}
+        onDisable={disableSharing}
+        onLeave={leaveSharedAccount}
       />
       <ConfirmDialog
         open={deleteAccountTarget != null}

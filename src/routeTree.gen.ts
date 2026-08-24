@@ -9,16 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
+import { Route as AppAssetsRouteImport } from './routes/_app/assets'
 import { Route as AppExpensesRouteImport } from './routes/_app/expenses'
 import { Route as AppGoldRouteImport } from './routes/_app/gold'
+import { Route as AppGroupsRouteImport } from './routes/_app/groups'
+import { Route as AppHomeRouteImport } from './routes/_app/home'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppStocksRouteImport } from './routes/_app/stocks'
 import { Route as AppSummaryRouteImport } from './routes/_app/summary'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -28,14 +38,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRoute,
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppAccountsRoute = AppAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRoute = AppAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppExpensesRoute = AppExpensesRouteImport.update({
@@ -46,6 +61,21 @@ const AppExpensesRoute = AppExpensesRouteImport.update({
 const AppGoldRoute = AppGoldRouteImport.update({
   id: '/gold',
   path: '/gold',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGroupsRoute = AppGroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHomeRoute = AppHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -65,78 +95,117 @@ const AppSummaryRoute = AppSummaryRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/accounts': typeof AppAccountsRoute
+  '/assets': typeof AppAssetsRoute
   '/expenses': typeof AppExpensesRoute
   '/gold': typeof AppGoldRoute
+  '/groups': typeof AppGroupsRoute
+  '/home': typeof AppHomeRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/stocks': typeof AppStocksRoute
   '/summary': typeof AppSummaryRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/accounts': typeof AppAccountsRoute
+  '/assets': typeof AppAssetsRoute
   '/expenses': typeof AppExpensesRoute
   '/gold': typeof AppGoldRoute
+  '/groups': typeof AppGroupsRoute
+  '/home': typeof AppHomeRoute
+  '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
   '/stocks': typeof AppStocksRoute
   '/summary': typeof AppSummaryRoute
-  '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_app/accounts': typeof AppAccountsRoute
+  '/_app/assets': typeof AppAssetsRoute
   '/_app/expenses': typeof AppExpensesRoute
   '/_app/gold': typeof AppGoldRoute
+  '/_app/groups': typeof AppGroupsRoute
+  '/_app/home': typeof AppHomeRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/stocks': typeof AppStocksRoute
   '/_app/summary': typeof AppSummaryRoute
-  '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/reset-password'
     | '/accounts'
+    | '/assets'
     | '/expenses'
     | '/gold'
+    | '/groups'
+    | '/home'
+    | '/profile'
     | '/settings'
     | '/stocks'
     | '/summary'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
+    | '/reset-password'
     | '/accounts'
+    | '/assets'
     | '/expenses'
     | '/gold'
+    | '/groups'
+    | '/home'
+    | '/profile'
     | '/settings'
     | '/stocks'
     | '/summary'
-    | '/'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/login'
+    | '/reset-password'
     | '/_app/accounts'
+    | '/_app/assets'
     | '/_app/expenses'
     | '/_app/gold'
+    | '/_app/groups'
+    | '/_app/home'
+    | '/_app/profile'
     | '/_app/settings'
     | '/_app/stocks'
     | '/_app/summary'
-    | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -151,18 +220,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/accounts': {
       id: '/_app/accounts'
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assets': {
+      id: '/_app/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AppAssetsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/expenses': {
@@ -177,6 +253,27 @@ declare module '@tanstack/react-router' {
       path: '/gold'
       fullPath: '/gold'
       preLoaderRoute: typeof AppGoldRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/groups': {
+      id: '/_app/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof AppGroupsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/home': {
+      id: '/_app/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AppHomeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -205,29 +302,37 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
+  AppAssetsRoute: typeof AppAssetsRoute
   AppExpensesRoute: typeof AppExpensesRoute
   AppGoldRoute: typeof AppGoldRoute
+  AppGroupsRoute: typeof AppGroupsRoute
+  AppHomeRoute: typeof AppHomeRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStocksRoute: typeof AppStocksRoute
   AppSummaryRoute: typeof AppSummaryRoute
-  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
+  AppAssetsRoute: AppAssetsRoute,
   AppExpensesRoute: AppExpensesRoute,
   AppGoldRoute: AppGoldRoute,
+  AppGroupsRoute: AppGroupsRoute,
+  AppHomeRoute: AppHomeRoute,
+  AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStocksRoute: AppStocksRoute,
   AppSummaryRoute: AppSummaryRoute,
-  AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { useAccounts } from '@/features/accounts'
+import { useExpenseGroups } from '@/features/expenseGroups'
 import { ExpenseFormDialog } from '@/features/expenses/components/ExpenseFormDialog'
 import { useExpenses, type Expense } from '@/features/expenses/hooks/useExpenses'
-import { CATEGORY_COLORS } from '@/features/expenses/lib/categories'
+import { CATEGORIES, CATEGORY_COLORS, type Category } from '@/features/expenses/lib/categories'
 import { useProfile } from '@/features/settings'
 import { formatDate } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
@@ -15,73 +16,185 @@ import { MoneyText } from '@/shared/ui/HideMoney'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
-export function ExpensesPage() {
+type GroupFilter = '' | 'none' | string
+
+export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { t, i18n } = useTranslation()
   const online = useOnlineStatus()
   const { profile } = useProfile()
-  const { accounts } = useAccounts()
+  const { accounts, memberLabels, currentUserId } = useAccounts()
+  const { groups } = useExpenseGroups()
   const { expenses, loading, error, createExpense, updateExpense, deleteExpense } = useExpenses()
   const [dialogExpense, setDialogExpense] = useState<Expense | null | 'new'>(null)
   const [deleteExpenseTarget, setDeleteExpenseTarget] = useState<Expense | null>(null)
+  const [filterAccountId, setFilterAccountId] = useState('')
+  const [filterCategory, setFilterCategory] = useState<'' | Category>('')
+  const [filterGroupId, setFilterGroupId] = useState<GroupFilter>('')
   const lang = i18n.language
   const defaultCurrency = profile?.default_currency ?? 'USD'
   const dialogOpen = dialogExpense !== null
+
+  const groupNameById = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const group of groups) map[group.id] = group.name
+    return map
+  }, [groups])
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((item) => {
+      if (filterAccountId && item.account_id !== filterAccountId) return false
+      if (filterCategory && item.category !== filterCategory) return false
+      if (filterGroupId === 'none') {
+        if (item.group_id) return false
+      } else if (filterGroupId) {
+        if (item.group_id !== filterGroupId) return false
+      }
+      return true
+    })
+  }, [expenses, filterAccountId, filterCategory, filterGroupId])
+
   const showNeedCache = !online && !loading && expenses.length === 0 && !error
+  const filtersActive = Boolean(filterAccountId || filterCategory || filterGroupId)
+
+  function clearFilters() {
+    setFilterAccountId('')
+    setFilterCategory('')
+    setFilterGroupId('')
+  }
 
   return (
     <div className="space-y-4">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-heading">{t('app.navExpenses')}</h1>
+        {hideTitle ? <div /> : <h1 className="text-xl font-bold text-heading sm:text-2xl">{t('expense.tabExpenses')}</h1>}
         <Button
           type="button"
-          className="rounded-xl"
+          className="h-11 shrink-0 rounded-xl"
           onClick={() => setDialogExpense('new')}
           disabled={accounts.length === 0}
         >
           <Plus />
-          {t('app.add')}
+          <span className="ms-1">{t('app.add')}</span>
         </Button>
       </div>
       {accounts.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
           {t('accounts.needAccountFirst')}{' '}
           <Link to="/accounts" className="font-semibold underline">
             {t('app.navAccounts')}
           </Link>
         </p>
       ) : null}
+
+      {accounts.length > 0 ? (
+        <div className="grid gap-3 rounded-2xl border border-gold-soft/70 bg-surface p-3 shadow-[0_12px_28px_rgba(201,162,39,0.08)] sm:grid-cols-2 sm:p-4 lg:grid-cols-3">
+          <div>
+            <label className="block text-xs font-medium text-muted" htmlFor="filter-account">
+              {t('expense.filterAccount')}
+            </label>
+            <select
+              id="filter-account"
+              className="mt-1 min-h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-sm"
+              value={filterAccountId}
+              onChange={(e) => setFilterAccountId(e.target.value)}
+            >
+              <option value="">{t('expense.filterAllAccounts')}</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted" htmlFor="filter-category">
+              {t('expense.filterCategory')}
+            </label>
+            <select
+              id="filter-category"
+              className="mt-1 min-h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-sm"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value as '' | Category)}
+            >
+              <option value="">{t('expense.filterAllCategories')}</option>
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {t(`categories.${category}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <label className="block text-xs font-medium text-muted" htmlFor="filter-group">
+              {t('expense.filterGroup')}
+            </label>
+            <select
+              id="filter-group"
+              className="mt-1 min-h-11 w-full rounded-xl border border-gold-soft bg-surface px-3 text-sm"
+              value={filterGroupId}
+              onChange={(e) => setFilterGroupId(e.target.value as GroupFilter)}
+            >
+              <option value="">{t('expense.filterAllGroups')}</option>
+              <option value="none">{t('expense.filterNoGroup')}</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {filtersActive ? (
+            <button
+              type="button"
+              className="text-sm font-medium text-heading underline sm:col-span-2 lg:col-span-3"
+              onClick={clearFilters}
+            >
+              {t('expense.clearFilters')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {loading ? (
         <p className="text-sm text-muted" role="status">
           {t('app.loading')}
         </p>
       ) : null}
       {error && online ? (
-        <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300" role="alert">
+        <p
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
+          role="alert"
+        >
           {t('expense.error')}
         </p>
       ) : null}
       {showNeedCache ? (
-        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
           {t('offline.needCache')}
         </p>
       ) : null}
       {!loading && !showNeedCache && expenses.length === 0 && !error ? (
-        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-6 text-muted">
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
           {t('expense.empty')}
         </p>
       ) : null}
-      {!loading && expenses.length > 0 ? (
+      {!loading && expenses.length > 0 && filteredExpenses.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
+          {t('expense.filterEmpty')}
+        </p>
+      ) : null}
+      {!loading && filteredExpenses.length > 0 ? (
         <ul className="space-y-2">
-          {expenses.map((item) => {
+          {filteredExpenses.map((item) => {
             const account = accounts.find((a) => a.id === item.account_id)
+            const groupName = item.group_id ? groupNameById[item.group_id] : null
             const canMutate = online && !item.pending
             return (
               <li
                 key={item.id}
-                className="flex items-start justify-between gap-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]"
+                className="flex items-start justify-between gap-2 rounded-2xl border border-gold-soft/70 bg-surface p-3 shadow-[0_12px_28px_rgba(201,162,39,0.08)] sm:gap-3 sm:p-4"
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-semibold">
                     <MoneyText amount={item.amount} lang={lang} currency={account?.currency} />
                     {item.pending ? (
@@ -90,9 +203,9 @@ export function ExpensesPage() {
                       </span>
                     ) : null}
                   </p>
-                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+                  <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
                     <span
-                      className="inline-block size-2.5 rounded-full"
+                      className="inline-block size-2.5 shrink-0 rounded-full"
                       style={{ background: CATEGORY_COLORS[item.category] }}
                       aria-hidden
                     />
@@ -100,15 +213,41 @@ export function ExpensesPage() {
                     {account ? (
                       <>
                         <span aria-hidden>·</span>
-                        {account.name}
+                        <span className="truncate">{account.name}</span>
                       </>
                     ) : null}
                     <span aria-hidden>·</span>
                     {formatDate(item.occurred_on, lang)}
+                    {account &&
+                    (Boolean(account.share_code) ||
+                      account.user_id !== item.user_id ||
+                      (currentUserId != null && item.user_id !== currentUserId)) ? (
+                      <>
+                        <span aria-hidden>·</span>
+                        {t('expense.addedBy', {
+                          name:
+                            memberLabels[item.user_id] ??
+                            (item.user_id === currentUserId
+                              ? t('accounts.you')
+                              : t('accounts.memberFallback')),
+                        })}
+                      </>
+                    ) : null}
                   </p>
-                  {item.note ? <p className="mt-1 text-sm text-muted">{item.note}</p> : null}
+                  {groupName || item.group_id ? (
+                    <p className="mt-1.5">
+                      <span className="inline-flex max-w-full items-center rounded-full bg-navy/10 px-2 py-0.5 text-xs font-medium text-heading dark:bg-gold/20">
+                        <span className="truncate">
+                          {t('expense.inGroup', {
+                            name: groupName ?? t('expense.unknownGroup'),
+                          })}
+                        </span>
+                      </span>
+                    </p>
+                  ) : null}
+                  {item.note ? <p className="mt-1 truncate text-sm text-muted">{item.note}</p> : null}
                 </div>
-                <div className="flex shrink-0 gap-1">
+                <div className="flex shrink-0 gap-0.5 sm:gap-1">
                   <Button
                     type="button"
                     variant="ghost"
@@ -159,6 +298,7 @@ export function ExpensesPage() {
         }}
         expense={dialogExpense === 'new' ? null : dialogExpense}
         accounts={accounts}
+        groups={groups}
         defaultCurrency={defaultCurrency}
         onSubmit={async (input) => {
           if (dialogExpense === 'new' || dialogExpense === null) await createExpense(input)

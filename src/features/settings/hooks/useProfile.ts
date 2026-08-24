@@ -6,6 +6,7 @@ import { supabase } from '@/shared/lib/supabase'
 
 export interface Profile {
   user_id: string
+  display_name: string | null
   default_currency: CurrencyCode
   gold_price_24: number | null
   gold_price_21: number | null
@@ -15,6 +16,7 @@ export interface Profile {
 function mapProfile(row: Record<string, unknown>): Profile {
   return {
     user_id: String(row.user_id),
+    display_name: row.display_name == null ? null : String(row.display_name),
     default_currency: row.default_currency as CurrencyCode,
     gold_price_24: row.gold_price_24 == null ? null : Number(row.gold_price_24),
     gold_price_21: row.gold_price_21 == null ? null : Number(row.gold_price_21),
@@ -41,8 +43,9 @@ export function pricesFromProfile(profile: Profile | null): KaratPrices | null {
 async function fetchProfile(): Promise<Profile | null> {
   if (!supabase) return null
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) return null
 
   const { data, error } = await supabase
@@ -80,6 +83,22 @@ export function useProfile() {
   async function invalidateProfile() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.profile.all })
   }
+
+  const saveDisplayName = useMutation({
+    mutationFn: async (display_name: string) => {
+      if (!supabase || !profile) throw new Error('Not ready')
+      const trimmed = display_name.trim()
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          display_name: trimmed || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', profile.user_id)
+      if (updateError) throw updateError
+    },
+    onSuccess: invalidateProfile,
+  })
 
   const saveDefaultCurrency = useMutation({
     mutationFn: async (default_currency: CurrencyCode) => {
@@ -119,6 +138,7 @@ export function useProfile() {
     loading: query.isLoading,
     error: query.error ? (query.error as Error).message : null,
     reload,
+    saveDisplayName: (display_name: string) => saveDisplayName.mutateAsync(display_name),
     saveDefaultCurrency: (default_currency: CurrencyCode) =>
       saveDefaultCurrency.mutateAsync(default_currency),
     saveGoldPrices: (prices: KaratPrices) => saveGoldPrices.mutateAsync(prices),

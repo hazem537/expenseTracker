@@ -18,6 +18,7 @@ interface ExpenseFormDialogProps {
   onOpenChange: (open: boolean) => void
   expense?: Expense | null
   accounts: Account[]
+  groups?: { id: string; name: string }[]
   defaultCurrency: CurrencyCode
   onSubmit: (input: ExpenseInput) => Promise<void>
 }
@@ -27,6 +28,7 @@ export function ExpenseFormDialog({
   onOpenChange,
   expense,
   accounts,
+  groups,
   defaultCurrency,
   onSubmit,
 }: ExpenseFormDialogProps) {
@@ -69,6 +71,7 @@ export function ExpenseFormDialog({
             key={expense?.id ?? 'new'}
             initial={expense ?? null}
             accounts={accounts}
+            groups={groups}
             defaultCurrency={defaultCurrency}
             onBusyChange={(next) => {
               busyRef.current = next

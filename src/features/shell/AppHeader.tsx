@@ -1,4 +1,3 @@
-import { Wallet } from 'lucide-react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageToggle } from '@/shared/ui/LanguageToggle'
@@ -6,6 +5,7 @@ import { HideMoneyButton } from '@/shared/ui/HideMoney'
 import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { cn } from '@/lib/utils'
+import { AppLogo } from './AppLogo'
 
 interface AppHeaderProps {
   signedIn: boolean
@@ -20,13 +20,11 @@ const navDisabled =
   'cursor-not-allowed rounded-full px-3 py-2 text-sm font-medium text-muted opacity-50'
 
 const desktopLinks = [
-  { to: '/', labelKey: 'app.navDashboard', exact: true, offlineOk: true },
-  { to: '/summary', labelKey: 'app.navSummary', offlineOk: false },
+  { to: '/home', labelKey: 'app.navDashboard', exact: true, offlineOk: true },
   { to: '/expenses', labelKey: 'app.navExpenses', offlineOk: true },
   { to: '/accounts', labelKey: 'app.navAccounts', offlineOk: true },
-  { to: '/gold', labelKey: 'app.navGold', offlineOk: false },
-  { to: '/stocks', labelKey: 'app.navStocks', offlineOk: false },
-  { to: '/settings', labelKey: 'app.navSettings', offlineOk: true },
+  { to: '/assets', labelKey: 'app.navAssets', offlineOk: false },
+  { to: '/profile', labelKey: 'app.navProfile', offlineOk: true },
 ] as const
 
 export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
@@ -38,10 +36,7 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
     <header>
       <div className="mx-auto flex h-12 max-w-[768px] items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-full bg-navy">
-            <Wallet className="size-[18px] text-gold-bright" />
-          </span>
-          <p className="font-header text-xl font-semibold leading-7 tracking-wide text-heading">{t('app.name')}</p>
+          <AppLogo />
         </div>
         <div className="flex items-center gap-1">
           <HideMoneyButton />
@@ -64,9 +59,17 @@ export function AppHeader({ signedIn, onSignOut }: AppHeaderProps) {
             const isActive =
               'exact' in item && item.exact
                 ? pathname === item.to
-                : item.to === '/'
-                  ? pathname === '/'
-                  : pathname.startsWith(item.to)
+                : item.to === '/home'
+                  ? pathname === '/home'
+                  : item.to === '/expenses'
+                    ? pathname.startsWith('/expenses') || pathname.startsWith('/groups')
+                    : item.to === '/assets'
+                      ? pathname.startsWith('/assets') || pathname.startsWith('/gold') || pathname.startsWith('/stocks')
+                      : item.to === '/profile'
+                        ? pathname.startsWith('/profile') ||
+                          pathname.startsWith('/settings') ||
+                          pathname.startsWith('/summary')
+                        : pathname.startsWith(item.to)
             const disabled = !online && !item.offlineOk
             if (disabled) {
               return (

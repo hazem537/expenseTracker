@@ -22,7 +22,7 @@ function pnlClass(value: number) {
   return 'text-gold-soft'
 }
 
-export function StocksPage() {
+export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { t, i18n } = useTranslation()
   const online = useOnlineStatus()
   const lang = i18n.language
@@ -100,7 +100,7 @@ export function StocksPage() {
         </p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-heading dark:text-ivory">{t('app.navStocks')}</h1>
+        {hideTitle ? <div /> : <h1 className="text-2xl font-bold text-heading dark:text-ivory">{t('stocks.title')}</h1>}
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"

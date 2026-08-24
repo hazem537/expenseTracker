@@ -29,7 +29,7 @@ export const queryPersister = createAsyncStoragePersister({
   key: PERSIST_KEY,
 })
 
-const PERSIST_ROOTS = new Set(['expenses', 'accounts', 'profile', 'gold', 'stocks'])
+const PERSIST_ROOTS = new Set(['expenses', 'accounts', 'expenseGroups', 'profile', 'gold', 'stocks'])
 
 export function shouldPersistQuery(queryKey: readonly unknown[]) {
   const root = queryKey[0]

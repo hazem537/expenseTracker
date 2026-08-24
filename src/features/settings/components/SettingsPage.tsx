@@ -8,7 +8,7 @@ import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase'
 import { InstallAppCard } from '@/shared/ui/InstallAppCard'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
-export function SettingsPage() {
+export function SettingsPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { t } = useTranslation()
   const online = useOnlineStatus()
   const { profile, loading, error, saveDefaultCurrency } = useProfile()
@@ -35,11 +35,14 @@ export function SettingsPage() {
   return (
     <div className="space-y-4">
       {!isSupabaseConfigured ? <SetupNotice /> : null}
-      <h1 className="text-2xl font-bold text-heading">{t('app.navSettings')}</h1>
+      {hideTitle ? null : <h1 className="text-2xl font-bold text-heading">{t('settings.title')}</h1>}
       {loading ? <p>{t('app.loading')}</p> : null}
       {error ? <p className="text-red-600">{t('expense.error')}</p> : null}
       {profile ? (
-        <form className="space-y-4 rounded-2xl border border-gold-soft/70 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.08)]" onSubmit={(e) => void handleSubmit(e)}>
+        <form
+          className="space-y-4 rounded-2xl border border-gold-soft/70 bg-surface p-5 shadow-[0_12px_28px_rgba(201,162,39,0.08)]"
+          onSubmit={(e) => void handleSubmit(e)}
+        >
           <div>
             <label className="block text-sm font-medium text-heading" htmlFor="base-cur">
               {t('settings.defaultCurrency')}

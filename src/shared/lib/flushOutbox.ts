@@ -51,6 +51,7 @@ export async function createExpenseOnServer(input: ExpenseInput, clientId?: stri
     occurred_on: input.occurred_on,
     note: input.note.trim() || null,
   }
+  if (input.group_id) row.group_id = input.group_id
   if (clientId) row.id = clientId
 
   const { error: insertError } = await supabase.from('expenses').insert(row)
@@ -84,6 +85,7 @@ export async function flushExpenseOutbox() {
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenseGroups.all }),
     ])
   } finally {
     flushing = false

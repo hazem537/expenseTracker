@@ -14,7 +14,13 @@ import { MoneyText } from '@/shared/ui/HideMoney'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
 import { SetupNotice } from '@/shared/ui/SetupNotice'
 
-export function GoldPage() {
+function pnlClass(value: number) {
+  if (value > 0.004) return 'text-emerald-400'
+  if (value < -0.004) return 'text-red-400'
+  return 'text-gold-soft'
+}
+
+export function GoldPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { t, i18n } = useTranslation()
   const online = useOnlineStatus()
   const lang = i18n.language
@@ -45,6 +51,13 @@ export function GoldPage() {
     if (!prices) return null
     return holdings.reduce((sum, item) => sum + (estimateGoldValue(item.grams, item.karat, prices) ?? 0), 0)
   }, [holdings, prices])
+  const totalCost = useMemo(
+    () => holdings.reduce((sum, item) => sum + item.avg_cost * item.grams, 0),
+    [holdings],
+  )
+  const totalPnl = totalValue == null ? null : totalValue - totalCost
+  const totalWinRatio =
+    totalPnl != null && totalCost > 0 ? (totalPnl / totalCost) * 100 : null
 
   return (
     <div className="space-y-6">
@@ -55,7 +68,7 @@ export function GoldPage() {
         </p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-heading">{t('app.navGold')}</h1>
+        {hideTitle ? <div /> : <h1 className="text-2xl font-bold text-heading">{t('gold.title')}</h1>}
         <div className="flex gap-2">
           <Button
             type="button"
@@ -98,12 +111,25 @@ export function GoldPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-navy to-navy-mid p-4">
           <p className="text-sm text-gold-soft">{t('gold.totalGrams')}</p>
-          <p className="text-xl font-semibold text-gold-bright">{totalGrams.toFixed(3)} g</p>
+          <p className="text-xl font-semibold font-nums text-gold-bright">{totalGrams.toFixed(3)} g</p>
         </div>
         <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-navy to-navy-mid p-4">
           <p className="text-sm text-gold-soft">{t('gold.totalMoney')}</p>
           <p className="text-xl font-semibold text-gold-bright">
             {totalValue == null ? '—' : <MoneyText amount={totalValue} lang={lang} currency={defaultCurrency} />}
+          </p>
+        </div>
+        <div className="col-span-2 rounded-2xl border border-gold/40 bg-gradient-to-br from-navy to-navy-mid p-4">
+          <p className="text-sm text-gold-soft">{t('gold.unrealized')}</p>
+          <p className={`text-xl font-semibold ${totalPnl == null ? 'text-gold-bright' : pnlClass(totalPnl)}`}>
+            {totalPnl == null ? '—' : <MoneyText amount={totalPnl} lang={lang} currency={defaultCurrency} />}
+            {totalWinRatio == null ? '' : (
+              <span className="font-nums">
+                {' '}
+                ({totalWinRatio >= 0 ? '+' : ''}
+                {totalWinRatio.toFixed(1)}%)
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -145,7 +171,12 @@ export function GoldPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         onSubmit={async (values) => {
-          await addGrams({ karat: values.karat, grams: values.grams, note: values.note })
+          await addGrams({
+            karat: values.karat,
+            grams: values.grams,
+            note: values.note,
+            avgCost: values.avgCost,
+          })
         }}
       />
       <GoldTradeDialog
@@ -163,7 +194,7 @@ export function GoldPage() {
         onSubmit={async ({ side, holdingId, karat, grams, accountId, moneyAmount }) => {
           if (side === 'buy') {
             await spendMoney(accountId, moneyAmount)
-            await addGrams({ karat, grams })
+            await addGrams({ karat, grams, avgCost: prices?.[karat] })
           } else {
             if (!holdingId) throw new Error('Holding required')
             await addMoney(accountId, moneyAmount)

@@ -10,6 +10,7 @@ export interface Account {
   currency: CurrencyCode
   balance: number
   created_at: string
+  share_code: string | null
 }
 
 export interface Transfer {
@@ -24,14 +25,54 @@ export interface Transfer {
   note: string | null
 }
 
+export interface AccountMember {
+  user_id: string
+  display_name: string | null
+  email: string | null
+}
+
+function generateShareCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const bytes = crypto.getRandomValues(new Uint8Array(8))
+  let code = ''
+  for (const b of bytes) code += alphabet[b % alphabet.length]
+  return code
+}
+
+function memberLabel(row: AccountMember, fallback: string) {
+  const name = row.display_name?.trim()
+  if (name) return name
+  if (row.email) return row.email
+  return fallback
+}
+
 async function setBalance(accountId: string, next: number) {
   if (!supabase) throw new Error('Supabase is not configured')
   const { error } = await supabase.from('accounts').update({ balance: next }).eq('id', accountId)
   if (error) throw error
 }
 
-async function fetchAccountsData(): Promise<{ accounts: Account[]; transfers: Transfer[] }> {
-  if (!supabase) return { accounts: [], transfers: [] }
+async function fetchAccountsData(): Promise<{
+  accounts: Account[]
+  transfers: Transfer[]
+  memberLabels: Record<string, string>
+  membersByAccount: Record<string, AccountMember[]>
+  currentUserId: string | null
+}> {
+  if (!supabase) {
+    return {
+      accounts: [],
+      transfers: [],
+      memberLabels: {},
+      membersByAccount: {},
+      currentUserId: null,
+    }
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  const currentUserId = session?.user?.id ?? null
 
   const [{ data: accountRows, error: accountError }, { data: transferRows, error: transferError }] =
     await Promise.all([
@@ -42,18 +83,42 @@ async function fetchAccountsData(): Promise<{ accounts: Account[]; transfers: Tr
   if (accountError) throw accountError
   if (transferError) throw transferError
 
-  return {
-    accounts: (accountRows ?? []).map((row) => ({
-      ...row,
-      balance: Number(row.balance),
-    })) as Account[],
-    transfers: (transferRows ?? []).map((row) => ({
-      ...row,
-      from_amount: Number(row.from_amount),
-      to_amount: Number(row.to_amount),
-      fx_rate: Number(row.fx_rate),
-    })) as Transfer[],
-  }
+  const client = supabase
+
+  const accounts = (accountRows ?? []).map((row) => ({
+    ...row,
+    balance: Number(row.balance),
+    share_code: row.share_code == null ? null : String(row.share_code),
+  })) as Account[]
+
+  const transfers = (transferRows ?? []).map((row) => ({
+    ...row,
+    from_amount: Number(row.from_amount),
+    to_amount: Number(row.to_amount),
+    fx_rate: Number(row.fx_rate),
+  })) as Transfer[]
+
+  const memberLabels: Record<string, string> = {}
+  const membersByAccount: Record<string, AccountMember[]> = {}
+
+  await Promise.all(
+    accounts.map(async (account) => {
+      const { data, error } = await client.rpc('get_account_members', {
+        p_account_id: account.id,
+      })
+      if (error) {
+        membersByAccount[account.id] = []
+        return
+      }
+      const members = (data ?? []) as AccountMember[]
+      membersByAccount[account.id] = members
+      for (const member of members) {
+        memberLabels[member.user_id] = memberLabel(member, 'Member')
+      }
+    }),
+  )
+
+  return { accounts, transfers, memberLabels, membersByAccount, currentUserId }
 }
 
 export function useAccounts() {
@@ -67,6 +132,9 @@ export function useAccounts() {
 
   const accounts = query.data?.accounts ?? []
   const transfers = query.data?.transfers ?? []
+  const memberLabels = query.data?.memberLabels ?? {}
+  const membersByAccount = query.data?.membersByAccount ?? {}
+  const currentUserId = query.data?.currentUserId ?? null
 
   async function invalidateAccounts() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all })
@@ -76,8 +144,9 @@ export function useAccounts() {
     mutationFn: async (input: { name: string; currency: CurrencyCode; openingBalance: number }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) throw new Error('Not signed in')
       const { error: insertError } = await supabase.from('accounts').insert({
         user_id: user.id,
@@ -92,11 +161,33 @@ export function useAccounts() {
 
   const addMoney = useMutation({
     mutationFn: async ({ accountId, amount }: { accountId: string; amount: number }) => {
+      if (!supabase) throw new Error('Supabase is not configured')
       const account = accounts.find((item) => item.id === accountId)
       if (!account) throw new Error('Account not found')
+      if (!(amount > 0)) throw new Error('Invalid amount')
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const user = session?.user
+      if (!user) throw new Error('Not signed in')
+
+      const { error: depositError } = await supabase.from('account_deposits').insert({
+        account_id: accountId,
+        user_id: user.id,
+        amount,
+        occurred_on: new Date().toISOString().slice(0, 10),
+      })
+      if (depositError) throw depositError
+
       await setBalance(accountId, account.balance + amount)
     },
-    onSuccess: invalidateAccounts,
+    onSuccess: async () => {
+      await Promise.all([
+        invalidateAccounts(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounts.detailPrefix }),
+      ])
+    },
   })
 
   const spendMoney = useMutation({
@@ -112,6 +203,10 @@ export function useAccounts() {
   const deleteAccount = useMutation({
     mutationFn: async (accountId: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
+      const account = accounts.find((item) => item.id === accountId)
+      if (account && currentUserId && account.user_id !== currentUserId) {
+        throw new Error('NOT_CREATOR')
+      }
       const { count, error: expenseError } = await supabase
         .from('expenses')
         .select('id', { count: 'exact', head: true })
@@ -153,8 +248,9 @@ export function useAccounts() {
       if (from.balance < input.fromAmount) throw new Error('Insufficient funds')
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        data: { session },
+      } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) throw new Error('Not signed in')
 
       const fx_rate = input.fromAmount === 0 ? 1 : input.toAmount / input.fromAmount
@@ -198,6 +294,88 @@ export function useAccounts() {
     onSuccess: invalidateAccounts,
   })
 
+  const enableSharing = useMutation({
+    mutationFn: async (accountId: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const code = generateShareCode()
+      const { error } = await supabase
+        .from('accounts')
+        .update({ share_code: code })
+        .eq('id', accountId)
+      if (error) throw error
+      return code
+    },
+    onSuccess: invalidateAccounts,
+  })
+
+  const regenerateShareCode = useMutation({
+    mutationFn: async (accountId: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const code = generateShareCode()
+      const { error } = await supabase
+        .from('accounts')
+        .update({ share_code: code })
+        .eq('id', accountId)
+      if (error) throw error
+      return code
+    },
+    onSuccess: invalidateAccounts,
+  })
+
+  const disableSharing = useMutation({
+    mutationFn: async (accountId: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase
+        .from('accounts')
+        .update({ share_code: null })
+        .eq('id', accountId)
+      if (error) throw error
+    },
+    onSuccess: invalidateAccounts,
+  })
+
+  const joinByShareCode = useMutation({
+    mutationFn: async (code: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { data, error } = await supabase.rpc('join_account_by_share_code', {
+        p_code: code.trim().toUpperCase(),
+      })
+      if (error) throw error
+      return data as string
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        invalidateAccounts(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+      ])
+    },
+  })
+
+  const leaveSharedAccount = useMutation({
+    mutationFn: async (accountId: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const user = session?.user
+      if (!user) throw new Error('Not signed in')
+      const account = accounts.find((item) => item.id === accountId)
+      if (account && account.user_id === user.id) throw new Error('CREATOR_CANNOT_LEAVE')
+      const { error } = await supabase
+        .from('account_members')
+        .delete()
+        .eq('account_id', accountId)
+        .eq('user_id', user.id)
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        invalidateAccounts(),
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
+      ])
+    },
+  })
+
   const reload = async () => {
     await invalidateAccounts()
   }
@@ -205,6 +383,9 @@ export function useAccounts() {
   return {
     accounts,
     transfers,
+    memberLabels,
+    membersByAccount,
+    currentUserId,
     loading: query.isLoading,
     error: query.error ? (query.error as Error).message : null,
     reload,
@@ -225,5 +406,10 @@ export function useAccounts() {
       occurredOn: string
       note: string
     }) => transfer.mutateAsync(input),
+    enableSharing: (accountId: string) => enableSharing.mutateAsync(accountId),
+    regenerateShareCode: (accountId: string) => regenerateShareCode.mutateAsync(accountId),
+    disableSharing: (accountId: string) => disableSharing.mutateAsync(accountId),
+    joinByShareCode: (code: string) => joinByShareCode.mutateAsync(code),
+    leaveSharedAccount: (accountId: string) => leaveSharedAccount.mutateAsync(accountId),
   }
 }

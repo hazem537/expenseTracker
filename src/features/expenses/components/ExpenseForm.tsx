@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
+import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
 import { CATEGORIES, type Category } from '@/features/expenses/lib/categories'
 import type { Expense, ExpenseInput } from '@/features/expenses/hooks/useExpenses'
-import type { CurrencyCode } from '@/shared/lib/currencies'
+import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
+import { useOnlineStatus } from '@/shared/lib/online'
 
 interface ExpenseFormProps {
   initial?: Expense | null
   accounts: Account[]
+  groups?: { id: string; name: string }[]
+  lockGroupId?: string
   defaultCurrency: CurrencyCode
   onSubmit: (input: ExpenseInput) => Promise<void>
   onCancel: () => void
@@ -23,29 +27,136 @@ const selectClass =
 export function ExpenseForm({
   initial,
   accounts,
+  groups = [],
+  lockGroupId,
   defaultCurrency,
   onSubmit,
   onCancel,
   onBusyChange,
 }: ExpenseFormProps) {
   const { t } = useTranslation()
+  const online = useOnlineStatus()
   const [accountId, setAccountId] = useState(initial?.account_id ?? accounts[0]?.id ?? '')
-  const [amount, setAmount] = useState(initial ? String(initial.amount) : '')
-  const [amountBase, setAmountBase] = useState(initial ? String(initial.amount_base) : '')
+  const account = accounts.find((item) => item.id === accountId)
+  const [paidCurrency, setPaidCurrency] = useState<CurrencyCode>(
+    account?.currency ?? defaultCurrency,
+  )
+  const [paidAmount, setPaidAmount] = useState(initial ? String(initial.amount) : '')
+  const [convertedAmount, setConvertedAmount] = useState<number | null>(
+    initial ? initial.amount : null,
+  )
+  const [convertedBase, setConvertedBase] = useState<number | null>(
+    initial ? initial.amount_base : null,
+  )
+  const [fxRate, setFxRate] = useState<number | null>(null)
+  const [fxBusy, setFxBusy] = useState(false)
+  const [fxError, setFxError] = useState<string | null>(null)
   const [category, setCategory] = useState<Category>(initial?.category ?? 'food')
   const [occurredOn, setOccurredOn] = useState(
     initial?.occurred_on ?? new Date().toISOString().slice(0, 10),
   )
   const [note, setNote] = useState(initial?.note ?? '')
+  const [groupId, setGroupId] = useState(lockGroupId ?? initial?.group_id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const account = accounts.find((item) => item.id === accountId)
-  const needsFx = Boolean(account && account.currency !== defaultCurrency)
+  useEffect(() => {
+    if (!account) return
+    if (!initial) setPaidCurrency(account.currency)
+  }, [account?.id, account?.currency, initial])
 
   useEffect(() => {
-    if (!needsFx) setAmountBase(amount)
-  }, [amount, needsFx])
+    let cancelled = false
+    async function convert() {
+      const value = Number(paidAmount)
+      if (!account || !Number.isFinite(value) || value <= 0) {
+        setConvertedAmount(null)
+        setConvertedBase(null)
+        setFxRate(null)
+        setFxError(null)
+        return
+      }
+
+      // Same currency as account: amount is already in account units
+      if (paidCurrency === account.currency) {
+        let inBase = value
+        if (account.currency !== defaultCurrency) {
+          if (!online) {
+            setConvertedAmount(value)
+            setConvertedBase(value)
+            setFxRate(1)
+            setFxError(null)
+            return
+          }
+          setFxBusy(true)
+          setFxError(null)
+          try {
+            const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency)
+            inBase = convertAmount(value, rateToBase)
+            if (!cancelled) {
+              setConvertedAmount(value)
+              setConvertedBase(inBase)
+              setFxRate(1)
+            }
+          } catch {
+            if (!cancelled) {
+              setConvertedAmount(value)
+              setConvertedBase(value)
+              setFxRate(1)
+              setFxError(null)
+            }
+          } finally {
+            if (!cancelled) setFxBusy(false)
+          }
+          return
+        }
+        setConvertedAmount(value)
+        setConvertedBase(value)
+        setFxRate(1)
+        setFxError(null)
+        return
+      }
+
+      // Paid in another currency (e.g. EGP) → convert to account currency (e.g. USD) via API
+      if (!online) {
+        setConvertedAmount(null)
+        setConvertedBase(null)
+        setFxRate(null)
+        setFxError(t('expense.fxOffline'))
+        return
+      }
+
+      setFxBusy(true)
+      setFxError(null)
+      try {
+        const rateToAccount = await fetchExchangeRate(paidCurrency, account.currency)
+        const inAccount = convertAmount(value, rateToAccount)
+        let inBase = inAccount
+        if (account.currency !== defaultCurrency) {
+          const rateToBase = await fetchExchangeRate(account.currency, defaultCurrency)
+          inBase = convertAmount(inAccount, rateToBase)
+        }
+        if (!cancelled) {
+          setConvertedAmount(inAccount)
+          setConvertedBase(inBase)
+          setFxRate(rateToAccount)
+        }
+      } catch {
+        if (!cancelled) {
+          setConvertedAmount(null)
+          setConvertedBase(null)
+          setFxRate(null)
+          setFxError(t('expense.fxError'))
+        }
+      } finally {
+        if (!cancelled) setFxBusy(false)
+      }
+    }
+    void convert()
+    return () => {
+      cancelled = true
+    }
+  }, [paidAmount, paidCurrency, account, defaultCurrency, online, t])
 
   function setBusy(next: boolean) {
     setSaving(next)
@@ -55,10 +166,8 @@ export function ExpenseForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (saving) return
-    const value = Number(amount)
-    const base = needsFx ? Number(amountBase) : value
-    if (!accountId || !Number.isFinite(value) || value <= 0 || !Number.isFinite(base) || base <= 0) {
-      setError(t('expense.error'))
+    if (!accountId || convertedAmount == null || convertedBase == null || convertedAmount <= 0) {
+      setError(fxError ?? t('expense.error'))
       return
     }
     setBusy(true)
@@ -66,14 +175,14 @@ export function ExpenseForm({
     try {
       await onSubmit({
         account_id: accountId,
-        amount: value,
-        amount_base: base,
-        fx_rate: value === 0 ? 1 : base / value,
+        amount: convertedAmount,
+        amount_base: convertedBase,
+        fx_rate: convertedAmount === 0 ? 1 : convertedBase / convertedAmount,
         category,
         occurred_on: occurredOn,
         note,
+        group_id: groupId || null,
       })
-      // Success: parent closes the dialog. Clear loading immediately.
       setBusy(false)
     } catch (err) {
       setError(
@@ -88,6 +197,8 @@ export function ExpenseForm({
   if (accounts.length === 0) {
     return <p className="text-neutral-600">{t('accounts.needAccountFirst')}</p>
   }
+
+  const needsFx = Boolean(account && paidCurrency !== account.currency)
 
   return (
     <form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
@@ -107,38 +218,97 @@ export function ExpenseForm({
           ))}
         </select>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="amount">
-          {t('expense.amount')} {account ? `(${account.currency})` : ''}
-        </Label>
-        <Input
-          id="amount"
-          type="number"
-          min="0.01"
-          step="0.01"
-          inputMode="decimal"
-          required
-          disabled={saving}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </div>
-      {needsFx ? (
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <Label htmlFor="amountBase">{t('expense.amountBase', { currency: defaultCurrency })}</Label>
+          <Label htmlFor="paid-currency">{t('expense.paidCurrency')}</Label>
+          <select
+            id="paid-currency"
+            className={selectClass}
+            value={paidCurrency}
+            disabled={saving}
+            onChange={(e) => setPaidCurrency(e.target.value as CurrencyCode)}
+          >
+            {CURRENCIES.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="amount">{t('expense.paidAmount')}</Label>
           <Input
-            id="amountBase"
+            id="amount"
             type="number"
             min="0.01"
             step="0.01"
             inputMode="decimal"
             required
             disabled={saving}
-            value={amountBase}
-            onChange={(e) => setAmountBase(e.target.value)}
+            className="font-nums"
+            value={paidAmount}
+            onChange={(e) => setPaidAmount(e.target.value)}
+            placeholder={needsFx ? t('expense.paidAmountHint') : undefined}
           />
         </div>
+      </div>
+      {needsFx ? (
+        <p className="text-xs text-muted">{t('expense.fxHelp', { currency: account?.currency })}</p>
       ) : null}
+      {account && (needsFx || (convertedAmount != null && paidAmount)) ? (
+        <div className="rounded-xl border border-gold-soft/70 bg-gold-soft/20 px-3 py-2 text-sm text-heading">
+          {fxBusy ? (
+            <p>{t('expense.fxLoading')}</p>
+          ) : fxError ? (
+            <p className="text-red-600">{fxError}</p>
+          ) : convertedAmount != null ? (
+            <div className="space-y-1">
+              <p className="font-medium">
+                {t('expense.fxEqualsAccount', {
+                  amount: convertedAmount.toFixed(2),
+                  currency: account.currency,
+                })}
+              </p>
+              {needsFx && fxRate != null ? (
+                <p className="text-xs text-muted">
+                  {t('expense.fxRateLine', {
+                    from: paidCurrency,
+                    to: account.currency,
+                    rate: fxRate.toFixed(6),
+                  })}
+                </p>
+              ) : null}
+              {account.currency !== defaultCurrency && convertedBase != null ? (
+                <p className="text-xs text-muted">
+                  {t('expense.fxEqualsBase', {
+                    amount: convertedBase.toFixed(2),
+                    currency: defaultCurrency,
+                  })}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {lockGroupId ? null : (
+        <div className="space-y-1">
+          <Label htmlFor="expense-group">{t('expense.group')}</Label>
+          <select
+            id="expense-group"
+            className={selectClass}
+            value={groupId}
+            disabled={saving}
+            onChange={(e) => setGroupId(e.target.value)}
+          >
+            <option value="">{t('expense.groupNone')}</option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="space-y-1">
         <Label htmlFor="category">{t('expense.category')}</Label>
         <select
@@ -181,7 +351,11 @@ export function ExpenseForm({
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
-        <Button type="submit" disabled={saving} className="min-h-11 flex-1 rounded-xl">
+        <Button
+          type="submit"
+          disabled={saving || fxBusy || convertedAmount == null}
+          className="min-h-11 flex-1 rounded-xl"
+        >
           {saving ? t('app.loading') : t('app.save')}
         </Button>
         <Button

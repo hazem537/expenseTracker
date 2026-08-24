@@ -1,10 +1,11 @@
-import { ArrowLeftRight, Plus } from 'lucide-react'
+import { ArrowLeftRight, Plus, UserPlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 
 interface AccountsHeaderProps {
   onAddAccount: () => void
   onTransfer: () => void
+  onJoin: () => void
   canTransfer: boolean
   actionsDisabled?: boolean
 }
@@ -12,6 +13,7 @@ interface AccountsHeaderProps {
 export function AccountsHeader({
   onAddAccount,
   onTransfer,
+  onJoin,
   canTransfer,
   actionsDisabled = false,
 }: AccountsHeaderProps) {
@@ -20,8 +22,20 @@ export function AccountsHeader({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-2xl font-bold text-heading">{t('app.navAccounts')}</h1>
-      <div className="flex gap-2">
+      <h1 className="text-2xl font-bold text-heading">{t('accounts.title')}</h1>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl"
+          disabled={actionsDisabled}
+          title={disabledTitle}
+          aria-label={actionsDisabled ? t('offline.actionDisabled') : t('accounts.join')}
+          onClick={onJoin}
+        >
+          <UserPlus />
+          {t('accounts.join')}
+        </Button>
         {canTransfer ? (
           <Button
             type="button"

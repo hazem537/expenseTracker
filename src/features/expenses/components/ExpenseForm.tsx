@@ -168,7 +168,7 @@ export function ExpenseForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (saving) return
-    if (!accountId || convertedAmount == null || convertedBase == null || convertedAmount <= 0) {
+    if (!account || !accountId || convertedAmount == null || convertedBase == null || convertedAmount <= 0) {
       setError(fxError ?? t('expense.error'))
       return
     }

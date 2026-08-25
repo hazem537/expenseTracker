@@ -11,6 +11,7 @@ import {
   type ExpenseGroup,
 } from '@/features/expenseGroups/hooks/useExpenseGroups'
 import { useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog'
@@ -37,7 +38,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
     deleteGroup,
   } = useExpenseGroups()
 
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
 
   const [createOpen, setCreateOpen] = useState(false)
   const [joinOpen, setJoinOpen] = useState(false)

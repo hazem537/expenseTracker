@@ -58,3 +58,23 @@ export async function fetchExchangeRate(from: string, to: string, onDate?: strin
 export function convertAmount(amount: number, rate: number) {
   return Math.round(amount * rate * 100) / 100
 }
+
+/** Cached `from → to` rate. On fetch failure returns 1 only when currencies match; otherwise throws were avoided — returns null. */
+export async function cachedExchangeRate(
+  cache: Map<string, number>,
+  from: string,
+  to: string,
+  onDate?: string,
+): Promise<number | null> {
+  if (from === to) return 1
+  const key = `${from}|${to}|${onDate ?? 'live'}`
+  const hit = cache.get(key)
+  if (hit != null) return hit
+  try {
+    const rate = await fetchExchangeRate(from, to, onDate)
+    cache.set(key, rate)
+    return rate
+  } catch {
+    return null
+  }
+}

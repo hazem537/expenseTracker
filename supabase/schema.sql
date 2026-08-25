@@ -2,9 +2,11 @@
 
 create table if not exists public.profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  default_currency text not null default 'USD',
+  default_currency text not null default 'EGP',
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles alter column default_currency set default 'EGP';
 
 alter table public.profiles add column if not exists gold_price_24 numeric(14, 4);
 alter table public.profiles add column if not exists gold_price_21 numeric(14, 4);
@@ -70,6 +72,9 @@ alter table public.expenses
 
 alter table public.expenses
   add column if not exists group_fx_rate numeric(18, 8);
+
+alter table public.expenses
+  add column if not exists account_currency text;
 
 create table if not exists public.transfers (
   id uuid primary key default gen_random_uuid(),
@@ -561,10 +566,25 @@ as $$
     and public.is_expense_group_member(p_group_id);
 $$;
 
+create or replace function public.get_expense_group_account_currencies(p_group_id uuid)
+returns table (account_id uuid, currency text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select distinct e.account_id, a.currency
+  from public.expenses e
+  join public.accounts a on a.id = e.account_id
+  where e.group_id = p_group_id
+    and public.is_expense_group_member(p_group_id);
+$$;
+
 grant execute on function public.is_expense_group_member(uuid) to authenticated;
 grant execute on function public.is_expense_group_creator(uuid) to authenticated;
 grant execute on function public.join_expense_group_by_share_code(text) to authenticated;
 grant execute on function public.get_expense_group_members(uuid) to authenticated;
+grant execute on function public.get_expense_group_account_currencies(uuid) to authenticated;
 
 alter table public.expense_groups enable row level security;
 alter table public.expense_group_members enable row level security;

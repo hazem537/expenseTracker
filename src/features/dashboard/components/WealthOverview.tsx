@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
+import { useQuery } from '@tanstack/react-query'
 import type { Account } from '@/features/accounts/hooks/useAccounts'
+import { accountsValueInCurrency, useFxRates } from '@/features/accounts/hooks/useFxRates'
 import { estimateGoldValue, useGoldHoldings } from '@/features/gold/hooks/useGoldHoldings'
 import { pricesFromProfile, useProfile } from '@/features/settings'
 import { useStockHoldings } from '@/features/stocks/hooks/useStockHoldings'
 import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
 const COLORS = {
@@ -23,53 +25,39 @@ interface WealthOverviewProps {
 export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
   const { t } = useTranslation()
   const { profile, refreshGoldPricesFromApi } = useProfile()
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
   const goldPrices = pricesFromProfile(profile)
   const { holdings: goldHoldings } = useGoldHoldings()
   const { holdings: stockHoldings } = useStockHoldings()
   const symbols = useMemo(() => stockHoldings.map((item) => item.symbol), [stockHoldings])
   const { quotes } = useStockQuotes(symbols)
 
-  const [accountsValue, setAccountsValue] = useState(0)
-  const [stocksValue, setStocksValue] = useState(0)
-
   const goldValue = useMemo(() => {
     if (!goldPrices) return 0
     return goldHoldings.reduce((sum, item) => sum + (estimateGoldValue(item.grams, item.karat, goldPrices) ?? 0), 0)
   }, [goldHoldings, goldPrices])
 
-  useEffect(() => {
-    if (!profile || goldPrices) return
-    void refreshGoldPricesFromApi().catch(() => undefined)
-  }, [profile, goldPrices, refreshGoldPricesFromApi])
+  useQuery({
+    queryKey: ['gold', 'autoPrices', profile?.user_id] as const,
+    queryFn: () => refreshGoldPricesFromApi(),
+    enabled: Boolean(profile) && !goldPrices,
+    retry: false,
+  })
 
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      const cache = new Map<string, number>()
-      let sum = 0
-      for (const account of accounts) {
-        let rate = cache.get(account.currency)
-        if (rate == null) {
-          try {
-            rate = await fetchExchangeRate(account.currency, defaultCurrency)
-          } catch {
-            rate = account.currency === defaultCurrency ? 1 : 0
-          }
-          cache.set(account.currency, rate)
-        }
-        sum += convertAmount(account.balance, rate)
-      }
-      if (!cancelled) setAccountsValue(sum)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [accounts, defaultCurrency])
+  const accountCurrencies = useMemo(
+    () => [...new Set(accounts.map((item) => item.currency))],
+    [accounts],
+  )
+  const needsAccountFx = accountCurrencies.some((code) => code !== defaultCurrency)
+  const { data: accountRates } = useFxRates(accountCurrencies, defaultCurrency, needsAccountFx)
+  const accountsValue = accountsValueInCurrency(accounts, defaultCurrency, accountRates)
 
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
+  const stockFingerprint = stockHoldings
+    .map((item) => `${item.symbol}:${item.shares}:${quotes[item.symbol]?.price ?? ''}`)
+    .join('|')
+  const { data: stocksValue = 0 } = useQuery({
+    queryKey: ['wealth', 'stocks', defaultCurrency, stockFingerprint] as const,
+    queryFn: async () => {
       const parts = await Promise.all(
         stockHoldings.map(async (item) => {
           const quote =
@@ -82,12 +70,10 @@ export function WealthOverview({ accounts, lang }: WealthOverviewProps) {
           }
         }),
       )
-      if (!cancelled) setStocksValue(parts.reduce((sum, n) => sum + n, 0))
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [stockHoldings, quotes, defaultCurrency])
+      return parts.reduce((sum, n) => sum + n, 0)
+    },
+    enabled: stockHoldings.length > 0,
+  })
 
   const slices = [
     { key: 'accounts' as const, label: t('dashboard.wealthAccounts'), value: accountsValue, color: COLORS.accounts },

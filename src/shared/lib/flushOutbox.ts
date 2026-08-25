@@ -49,6 +49,7 @@ export async function createExpenseOnServer(input: ExpenseInput, clientId?: stri
     fx_rate: input.fx_rate,
     amount_group: input.group_id ? (input.amount_group ?? null) : null,
     group_fx_rate: input.group_id ? (input.group_fx_rate ?? null) : null,
+    account_currency: input.account_currency ?? null,
     category: input.category,
     occurred_on: input.occurred_on,
     note: input.note.trim() || null,

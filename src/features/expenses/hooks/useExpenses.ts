@@ -22,6 +22,7 @@ export interface Expense {
   fx_rate: number
   amount_group?: number | null
   group_fx_rate?: number | null
+  account_currency?: string | null
   category: Category
   occurred_on: string
   note: string | null
@@ -36,6 +37,7 @@ export interface ExpenseInput {
   fx_rate: number
   amount_group?: number | null
   group_fx_rate?: number | null
+  account_currency?: string | null
   category: Category
   occurred_on: string
   note: string
@@ -68,6 +70,7 @@ function mapExpense(row: Record<string, unknown>): Expense {
     fx_rate: row.fx_rate == null ? 1 : Number(row.fx_rate),
     amount_group: row.amount_group == null ? null : Number(row.amount_group),
     group_fx_rate: row.group_fx_rate == null ? null : Number(row.group_fx_rate),
+    account_currency: row.account_currency == null ? null : String(row.account_currency),
     account_id: String(row.account_id ?? ''),
     group_id: row.group_id == null ? null : String(row.group_id),
   }
@@ -95,6 +98,8 @@ function mergePendingFlags(expenses: Expense[], pendingIds: Set<string>): Expens
   return expenses.map((item) => (pendingIds.has(item.id) ? { ...item, pending: true } : item))
 }
 
+const EMPTY_EXPENSES: Expense[] = []
+
 export function useExpenses(range?: { start: string; end: string }) {
   const queryClient = useQueryClient()
   const queryKey = queryKeys.expenses.list(range)
@@ -118,7 +123,7 @@ export function useExpenses(range?: { start: string; end: string }) {
     networkMode: 'offlineFirst',
   })
 
-  const expenses = mergePendingFlags(query.data ?? [], pendingIds)
+  const expenses = mergePendingFlags(query.data ?? EMPTY_EXPENSES, pendingIds)
 
   async function invalidateRelated() {
     void Promise.all([
@@ -142,6 +147,7 @@ export function useExpenses(range?: { start: string; end: string }) {
         fx_rate: input.fx_rate,
         amount_group: input.amount_group ?? null,
         group_fx_rate: input.group_fx_rate ?? null,
+        account_currency: input.account_currency ?? null,
         category: input.category,
         occurred_on: input.occurred_on,
         note: input.note.trim() || null,
@@ -194,6 +200,7 @@ export function useExpenses(range?: { start: string; end: string }) {
           fx_rate: input.fx_rate,
           amount_group: input.group_id ? (input.amount_group ?? null) : null,
           group_fx_rate: input.group_id ? (input.group_fx_rate ?? null) : null,
+          account_currency: input.account_currency ?? null,
           category: input.category,
           occurred_on: input.occurred_on,
           note: input.note.trim() || null,

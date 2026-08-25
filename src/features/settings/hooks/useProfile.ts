@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchKaratPricesInCurrency, type KaratPrices } from '@/features/gold/lib/gold'
-import type { CurrencyCode } from '@/shared/lib/currencies'
+import { DEFAULT_CURRENCY, type CurrencyCode } from '@/shared/lib/currencies'
 import { queryKeys } from '@/shared/lib/queryKeys'
 import { supabase } from '@/shared/lib/supabase'
 
@@ -59,7 +59,7 @@ async function fetchProfile(): Promise<Profile | null> {
   if (!data) {
     const { data: created, error: insertError } = await supabase
       .from('profiles')
-      .insert({ user_id: user.id, default_currency: 'USD' })
+      .insert({ user_id: user.id, default_currency: DEFAULT_CURRENCY })
       .select()
       .single()
     if (insertError) throw insertError

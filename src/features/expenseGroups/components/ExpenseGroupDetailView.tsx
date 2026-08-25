@@ -13,6 +13,7 @@ import type {
 } from '@/features/expenseGroups/hooks/useExpenseGroups'
 import { useExpenses } from '@/features/expenses/hooks/useExpenses'
 import { useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { MoneyText } from '@/shared/ui/HideMoney'
 
@@ -62,7 +63,7 @@ export function ExpenseGroupDetailView({
   const [shareOpen, setShareOpen] = useState(false)
 
   const displayMembers = members.length > 0 ? members : (listMembers ?? [])
-  const defaultCurrency = profile?.default_currency ?? group?.currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? group?.currency ?? DEFAULT_CURRENCY
   const showNeedCache = !online && !loading && !group && !error
 
   function personName(userId: string) {

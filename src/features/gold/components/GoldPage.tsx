@@ -8,6 +8,7 @@ import { GoldHoldingRow } from '@/features/gold/components/GoldHoldingRow'
 import { GoldTradeDialog, type GoldTradeSide } from '@/features/gold/components/GoldTradeDialog'
 import { estimateGoldValue, useGoldHoldings } from '@/features/gold/hooks/useGoldHoldings'
 import { pricesFromProfile, useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
@@ -28,7 +29,7 @@ export function GoldPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { accounts, addMoney, spendMoney } = useAccounts()
   const { holdings, loading, error, addGrams, reduceHolding, deleteHolding } = useGoldHoldings()
   const prices = pricesFromProfile(profile)
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
 
   const [addOpen, setAddOpen] = useState(false)
   const [trade, setTrade] = useState<{ side: GoldTradeSide; holdingId?: string } | null>(null)

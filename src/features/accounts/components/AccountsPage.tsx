@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountDetailView } from '@/features/accounts/components/AccountDetailPage'
 import { AccountFormDialog } from '@/features/accounts/components/AccountFormDialog'
@@ -10,8 +10,9 @@ import { RecentTransfers } from '@/features/accounts/components/RecentTransfers'
 import { ShareAccountDialog } from '@/features/accounts/components/ShareAccountDialog'
 import { TransferDialog } from '@/features/accounts/components/TransferDialog'
 import { useAccounts, type Account } from '@/features/accounts/hooks/useAccounts'
-import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
+import { accountBalanceWeights, useFxRates } from '@/features/accounts/hooks/useFxRates'
 import { useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { SectionTabs } from '@/shared/ui/SectionTabs'
@@ -42,7 +43,7 @@ export function AccountsPage() {
     setHideOnDashboard,
   } = useAccounts()
   const lang = i18n.language
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
 
   const [createOpen, setCreateOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
@@ -55,7 +56,6 @@ export function AccountsPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [currencyFilter, setCurrencyFilter] = useState('')
   const [hubTab, setHubTab] = useState<'accounts' | 'transfers'>('accounts')
-  const [weights, setWeights] = useState<Record<string, number>>({})
 
   const usedCurrencies = useMemo(() => {
     return Array.from(new Set(accounts.map((item) => item.currency))).sort()
@@ -78,39 +78,12 @@ export function AccountsPage() {
     ? (accounts.find((a) => a.id === shareAccount.id) ?? shareAccount)
     : null
 
-  useEffect(() => {
-    if (!online) return
-    let cancelled = false
-    void (async () => {
-      const cache = new Map<string, number>()
-      const converted: Record<string, number> = {}
-      let total = 0
-      for (const account of accounts) {
-        let rate = cache.get(account.currency)
-        if (rate == null) {
-          try {
-            rate = await fetchExchangeRate(account.currency, defaultCurrency)
-          } catch {
-            rate = account.currency === defaultCurrency ? 1 : 0
-          }
-          cache.set(account.currency, rate)
-        }
-        const value = convertAmount(account.balance, rate)
-        converted[account.id] = value
-        total += value
-      }
-      const next: Record<string, number> = {}
-      if (total > 0) {
-        for (const account of accounts) {
-          next[account.id] = (converted[account.id] / total) * 100
-        }
-      }
-      if (!cancelled) setWeights(next)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [accounts, defaultCurrency, online])
+  const needsFx = usedCurrencies.some((code) => code !== defaultCurrency)
+  const { data: rates } = useFxRates(usedCurrencies, defaultCurrency, online && needsFx)
+  const weights = useMemo(
+    () => accountBalanceWeights(accounts, defaultCurrency, rates),
+    [accounts, defaultCurrency, rates],
+  )
 
   if (activityAccountId) {
     return (

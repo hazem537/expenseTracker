@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
+import { cachedExchangeRate, convertAmount } from '@/features/accounts/lib/exchangeRate'
 import type { Expense } from '@/features/expenses/hooks/useExpenses'
 import type { ExpenseGroup, ExpenseGroupMember } from '@/features/expenseGroups/hooks/useExpenseGroups'
 import { queryKeys } from '@/shared/lib/queryKeys'
@@ -30,27 +30,9 @@ function mapExpense(row: Record<string, unknown>): Expense {
     fx_rate: row.fx_rate == null ? 1 : Number(row.fx_rate),
     amount_group: row.amount_group == null ? null : Number(row.amount_group),
     group_fx_rate: row.group_fx_rate == null ? null : Number(row.group_fx_rate),
+    account_currency: row.account_currency == null ? null : String(row.account_currency),
     account_id: String(row.account_id ?? ''),
     group_id: row.group_id == null ? null : String(row.group_id),
-  }
-}
-
-async function rateForDate(
-  cache: Map<string, number>,
-  from: string,
-  to: string,
-  onDate: string,
-) {
-  const key = `${from}|${to}|${onDate}`
-  const hit = cache.get(key)
-  if (hit != null) return hit
-  try {
-    const rate = await fetchExchangeRate(from, to, onDate)
-    cache.set(key, rate)
-    return rate
-  } catch {
-    cache.set(key, 1)
-    return 1
   }
 }
 
@@ -121,25 +103,36 @@ async function fetchGroupDetail(groupId: string): Promise<{
   }
 
   const expenses = (expenseRows ?? []).map((row) => mapExpense(row as Record<string, unknown>))
-  const accountIds = [...new Set(expenses.map((item) => item.account_id).filter(Boolean))]
   const currencyByAccount = new Map<string, string>()
-  if (accountIds.length > 0) {
-    const { data: accountRows } = await supabase.from('accounts').select('id, currency').in('id', accountIds)
-    for (const row of accountRows ?? []) {
-      currencyByAccount.set(String(row.id), String(row.currency))
-    }
+  const { data: currencyRows } = await supabase.rpc('get_expense_group_account_currencies', {
+    p_group_id: groupId,
+  })
+  for (const row of currencyRows ?? []) {
+    currencyByAccount.set(String((row as { account_id: string }).account_id), String((row as { currency: string }).currency))
   }
 
   const rateCache = new Map<string, number>()
   const groupExpenses: GroupExpense[] = []
   for (const expense of expenses) {
-    if (expense.amount_group != null) {
+    const from =
+      expense.account_currency ?? currencyByAccount.get(expense.account_id) ?? null
+    if (expense.amount_group != null && (from == null || from === group.currency)) {
       groupExpenses.push({ ...expense, amount_group: expense.amount_group })
       continue
     }
-    const from = currencyByAccount.get(expense.account_id) ?? group.currency
-    const rate = await rateForDate(rateCache, from, group.currency, expense.occurred_on)
-    groupExpenses.push({ ...expense, amount_group: convertAmount(expense.amount, rate) })
+    if (from == null || from === group.currency) {
+      groupExpenses.push({
+        ...expense,
+        amount_group: expense.amount_group ?? expense.amount,
+      })
+      continue
+    }
+    const rate = await cachedExchangeRate(rateCache, from, group.currency, expense.occurred_on)
+    groupExpenses.push({
+      ...expense,
+      amount_group:
+        rate == null ? (expense.amount_group ?? expense.amount) : convertAmount(expense.amount, rate),
+    })
   }
 
   const paidByUser: Record<string, number> = {}

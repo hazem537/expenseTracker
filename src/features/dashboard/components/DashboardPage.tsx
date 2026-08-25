@@ -10,8 +10,10 @@ import {
 } from '@/features/dashboard/components/DashboardMonthHeader'
 import { MonthStatCards } from '@/features/dashboard/components/MonthStatCards'
 import { ExpenseFormDialog, useExpenses } from '@/features/expenses'
+import { expensesOnMyAccounts, useExpensesInCurrency } from '@/features/expenses/lib/displayCurrency'
 import { useExpenseGroups } from '@/features/expenseGroups'
 import { useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { monthRange } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
@@ -47,13 +49,15 @@ export function DashboardPage() {
     () => new Set(accounts.filter((account) => account.hide_on_dashboard).map((account) => account.id)),
     [accounts],
   )
-  const dashboardExpenses = useMemo(
-    () => expenses.filter((item) => !hiddenAccountIds.has(item.account_id)),
-    [expenses, hiddenAccountIds],
+  const ownVisibleExpenses = useMemo(
+    () =>
+      expensesOnMyAccounts(expenses, accounts).filter((item) => !hiddenAccountIds.has(item.account_id)),
+    [expenses, accounts, hiddenAccountIds],
   )
-  const total = dashboardExpenses.reduce((sum, item) => sum + item.amount_base, 0)
   const lang = i18n.language
-  const currency = profile?.default_currency ?? 'USD'
+  const currency = profile?.default_currency ?? DEFAULT_CURRENCY
+  const dashboardExpenses = useExpensesInCurrency(ownVisibleExpenses, accounts, currency, online)
+  const total = dashboardExpenses.reduce((sum, item) => sum + item.amount_base, 0)
 
   return (
     <div className="flex flex-col gap-6">

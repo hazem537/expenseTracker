@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GoldPricesSection } from '@/features/gold'
 import { useProfile } from '@/features/settings/hooks/useProfile'
-import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
+import { CURRENCIES, DEFAULT_CURRENCY, type CurrencyCode } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured, supabase } from '@/shared/lib/supabase'
 import { InstallAppCard } from '@/shared/ui/InstallAppCard'
@@ -12,7 +12,7 @@ export function SettingsPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { t } = useTranslation()
   const online = useOnlineStatus()
   const { profile, loading, error, saveDefaultCurrency } = useProfile()
-  const [currency, setCurrency] = useState<CurrencyCode>('USD')
+  const [currency, setCurrency] = useState<CurrencyCode>(DEFAULT_CURRENCY)
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
 

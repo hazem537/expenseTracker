@@ -10,6 +10,7 @@ import { StockTradeDialog, type StockTradeSide } from '@/features/stocks/compone
 import { useStockHoldings } from '@/features/stocks/hooks/useStockHoldings'
 import { useStockQuotes } from '@/features/stocks/hooks/useStockQuotes'
 import { convertQuoteAmount, sameTicker } from '@/features/stocks/lib/quote'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
 import { MoneyText } from '@/shared/ui/HideMoney'
@@ -31,7 +32,7 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const { holdings, loading, error, upsertHolding, reduceShares, deleteHolding } = useStockHoldings()
   const symbols = useMemo(() => holdings.map((item) => item.symbol), [holdings])
   const { quotes, refreshing: quotesRefreshing, error: quotesError, refresh } = useStockQuotes(symbols)
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
 
   function quoteFor(symbol: string) {
     return quotes[symbol] ?? Object.values(quotes).find((q) => sameTicker(q.symbol, symbol))

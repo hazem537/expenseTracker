@@ -195,6 +195,7 @@ export function ExpenseForm({
         fx_rate: convertedAmount === 0 ? 1 : convertedBase / convertedAmount,
         amount_group: amountGroup,
         group_fx_rate: groupFxRate,
+        account_currency: account.currency,
         category,
         occurred_on: occurredOn,
         note,

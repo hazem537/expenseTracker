@@ -123,6 +123,11 @@ async function fetchAccountsData(): Promise<{
   return { accounts, transfers, memberLabels, membersByAccount, currentUserId }
 }
 
+const EMPTY_ACCOUNTS: Account[] = []
+const EMPTY_TRANSFERS: Transfer[] = []
+const EMPTY_LABELS: Record<string, string> = {}
+const EMPTY_MEMBERS: Record<string, AccountMember[]> = {}
+
 export function useAccounts() {
   const queryClient = useQueryClient()
 
@@ -132,10 +137,10 @@ export function useAccounts() {
     networkMode: 'offlineFirst',
   })
 
-  const accounts = query.data?.accounts ?? []
-  const transfers = query.data?.transfers ?? []
-  const memberLabels = query.data?.memberLabels ?? {}
-  const membersByAccount = query.data?.membersByAccount ?? {}
+  const accounts = query.data?.accounts ?? EMPTY_ACCOUNTS
+  const transfers = query.data?.transfers ?? EMPTY_TRANSFERS
+  const memberLabels = query.data?.memberLabels ?? EMPTY_LABELS
+  const membersByAccount = query.data?.membersByAccount ?? EMPTY_MEMBERS
   const currentUserId = query.data?.currentUserId ?? null
 
   async function invalidateAccounts() {

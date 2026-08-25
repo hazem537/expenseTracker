@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useAccountDetail, type AccountDeposit, type MemberTotals } from '@/features/accounts/hooks/useAccountDetail'
 import type { Expense } from '@/features/expenses/hooks/useExpenses'
 import { CATEGORY_COLORS } from '@/features/expenses/lib/categories'
-import { CURRENCIES, type CurrencyCode } from '@/shared/lib/currencies'
+import { CURRENCIES, DEFAULT_CURRENCY, type CurrencyCode } from '@/shared/lib/currencies'
 import { formatDate } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
@@ -276,7 +276,7 @@ export function AccountDetailView({ accountId, onBack, onUpdateAccount }: Accoun
 
   const [name, setName] = useState('')
   const [balance, setBalance] = useState('')
-  const [currency, setCurrency] = useState<CurrencyCode>('USD')
+  const [currency, setCurrency] = useState<CurrencyCode>(DEFAULT_CURRENCY)
   const [headerBusy, setHeaderBusy] = useState(false)
   const [headerError, setHeaderError] = useState<string | null>(null)
   const [memberView, setMemberView] = useState<'list' | 'charts'>('list')

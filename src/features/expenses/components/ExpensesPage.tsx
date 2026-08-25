@@ -7,8 +7,10 @@ import { useAccounts } from '@/features/accounts'
 import { useExpenseGroups } from '@/features/expenseGroups'
 import { ExpenseFormDialog } from '@/features/expenses/components/ExpenseFormDialog'
 import { useExpenses, type Expense } from '@/features/expenses/hooks/useExpenses'
+import { expensesOnMyAccounts } from '@/features/expenses/lib/displayCurrency'
 import { CATEGORIES, CATEGORY_COLORS, type Category } from '@/features/expenses/lib/categories'
 import { useProfile } from '@/features/settings'
+import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
 import { formatDate } from '@/shared/lib/format'
 import { useOnlineStatus } from '@/shared/lib/online'
 import { isSupabaseConfigured } from '@/shared/lib/supabase'
@@ -33,7 +35,7 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
   const [filterGroupId, setFilterGroupId] = useState<GroupFilter>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const lang = i18n.language
-  const defaultCurrency = profile?.default_currency ?? 'USD'
+  const defaultCurrency = profile?.default_currency ?? DEFAULT_CURRENCY
   const dialogOpen = dialogExpense !== null
 
   const groupNameById = useMemo(() => {
@@ -42,8 +44,10 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
     return map
   }, [groups])
 
+  const myExpenses = useMemo(() => expensesOnMyAccounts(expenses, accounts), [expenses, accounts])
+
   const filteredExpenses = useMemo(() => {
-    return expenses.filter((item) => {
+    return myExpenses.filter((item) => {
       if (filterAccountId && item.account_id !== filterAccountId) return false
       if (filterCategory && item.category !== filterCategory) return false
       if (filterGroupId === 'none') {
@@ -53,9 +57,9 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
       }
       return true
     })
-  }, [expenses, filterAccountId, filterCategory, filterGroupId])
+  }, [myExpenses, filterAccountId, filterCategory, filterGroupId])
 
-  const showNeedCache = !online && !loading && expenses.length === 0 && !error
+  const showNeedCache = !online && !loading && myExpenses.length === 0 && !error
   const filtersActive = Boolean(filterAccountId || filterCategory || filterGroupId)
 
   function clearFilters() {
@@ -175,12 +179,12 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
           {t('offline.needCache')}
         </p>
       ) : null}
-      {!loading && !showNeedCache && expenses.length === 0 && !error ? (
+      {!loading && !showNeedCache && myExpenses.length === 0 && !error ? (
         <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
           {t('expense.empty')}
         </p>
       ) : null}
-      {!loading && expenses.length > 0 && filteredExpenses.length === 0 ? (
+      {!loading && myExpenses.length > 0 && filteredExpenses.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-gold-soft bg-surface p-4 text-sm text-muted sm:p-6">
           {t('expense.filterEmpty')}
         </p>

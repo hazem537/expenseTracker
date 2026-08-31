@@ -248,33 +248,61 @@ export function useAccounts() {
       note: string
     }) => {
       if (!supabase) throw new Error('Supabase is not configured')
-      const from = accounts.find((item) => item.id === input.fromAccountId)
-      const to = accounts.find((item) => item.id === input.toAccountId)
-      if (!from || !to) throw new Error('Account not found')
-      if (from.id === to.id) throw new Error('Same account')
-      if (from.balance < input.fromAmount) throw new Error('Insufficient funds')
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user) throw new Error('Not signed in')
-
-      const fx_rate = input.fromAmount === 0 ? 1 : input.toAmount / input.fromAmount
-      const { error: insertError } = await supabase.from('transfers').insert({
-        user_id: user.id,
-        from_account_id: from.id,
-        to_account_id: to.id,
-        from_amount: input.fromAmount,
-        to_amount: input.toAmount,
-        fx_rate,
-        occurred_on: input.occurredOn,
-        note: input.note.trim() || null,
+      const { error } = await supabase.rpc('create_transfer', {
+        p_from_account_id: input.fromAccountId,
+        p_to_account_id: input.toAccountId,
+        p_from_amount: input.fromAmount,
+        p_to_amount: input.toAmount,
+        p_occurred_on: input.occurredOn,
+        p_note: input.note.trim() || null,
       })
-      if (insertError) throw insertError
+      if (error) {
+        if (error.message?.includes('Insufficient funds')) {
+          throw new Error('Insufficient funds')
+        }
+        throw error
+      }
+    },
+    onSuccess: invalidateAccounts,
+  })
 
-      await setBalance(from.id, from.balance - input.fromAmount)
-      await setBalance(to.id, to.balance + input.toAmount)
+  const updateTransfer = useMutation({
+    mutationFn: async (input: {
+      transferId: string
+      fromAccountId: string
+      toAccountId: string
+      fromAmount: number
+      toAmount: number
+      occurredOn: string
+      note: string
+    }) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase.rpc('update_transfer', {
+        p_transfer_id: input.transferId,
+        p_from_account_id: input.fromAccountId,
+        p_to_account_id: input.toAccountId,
+        p_from_amount: input.fromAmount,
+        p_to_amount: input.toAmount,
+        p_occurred_on: input.occurredOn,
+        p_note: input.note.trim() || null,
+      })
+      if (error) {
+        if (error.message?.includes('Insufficient funds')) {
+          throw new Error('Insufficient funds')
+        }
+        throw error
+      }
+    },
+    onSuccess: invalidateAccounts,
+  })
+
+  const deleteTransfer = useMutation({
+    mutationFn: async (transferId: string) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase.rpc('delete_transfer', {
+        p_transfer_id: transferId,
+      })
+      if (error) throw error
     },
     onSuccess: invalidateAccounts,
   })
@@ -427,6 +455,16 @@ export function useAccounts() {
       occurredOn: string
       note: string
     }) => transfer.mutateAsync(input),
+    updateTransfer: (input: {
+      transferId: string
+      fromAccountId: string
+      toAccountId: string
+      fromAmount: number
+      toAmount: number
+      occurredOn: string
+      note: string
+    }) => updateTransfer.mutateAsync(input),
+    deleteTransfer: (transferId: string) => deleteTransfer.mutateAsync(transferId),
     enableSharing: (accountId: string) => enableSharing.mutateAsync(accountId),
     regenerateShareCode: (accountId: string) => regenerateShareCode.mutateAsync(accountId),
     disableSharing: (accountId: string) => disableSharing.mutateAsync(accountId),

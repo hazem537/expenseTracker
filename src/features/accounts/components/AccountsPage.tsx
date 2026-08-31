@@ -9,7 +9,7 @@ import { JoinSharedDialog } from '@/features/accounts/components/JoinSharedDialo
 import { RecentTransfers } from '@/features/accounts/components/RecentTransfers'
 import { ShareAccountDialog } from '@/features/accounts/components/ShareAccountDialog'
 import { TransferDialog } from '@/features/accounts/components/TransferDialog'
-import { useAccounts, type Account } from '@/features/accounts/hooks/useAccounts'
+import { useAccounts, type Account, type Transfer } from '@/features/accounts/hooks/useAccounts'
 import { accountBalanceWeights, useFxRates } from '@/features/accounts/hooks/useFxRates'
 import { useProfile } from '@/features/settings'
 import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
@@ -35,6 +35,8 @@ export function AccountsPage() {
     updateAccount,
     deleteAccount,
     transfer,
+    updateTransfer,
+    deleteTransfer,
     enableSharing,
     regenerateShareCode,
     disableSharing,
@@ -47,6 +49,8 @@ export function AccountsPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [transferOpen, setTransferOpen] = useState(false)
+  const [editTransferTarget, setEditTransferTarget] = useState<Transfer | null>(null)
+  const [deleteTransferTarget, setDeleteTransferTarget] = useState<Transfer | null>(null)
   const [joinOpen, setJoinOpen] = useState(false)
   const [depositAccount, setDepositAccount] = useState<Account | null>(null)
   const [editAccount, setEditAccount] = useState<Account | null>(null)
@@ -168,7 +172,14 @@ export function AccountsPage() {
       />
         </div>
       ) : (
-        <RecentTransfers transfers={transfers} accounts={accounts} lang={lang} />
+        <RecentTransfers
+          transfers={transfers}
+          accounts={accounts}
+          lang={lang}
+          actionsDisabled={!online}
+          onEdit={(t) => setEditTransferTarget(t)}
+          onDelete={(t) => setDeleteTransferTarget(t)}
+        />
       )}
       <AccountFormDialog
         open={createOpen}
@@ -247,11 +258,40 @@ export function AccountsPage() {
         onOpenChange={setTransferOpen}
         accounts={accounts}
         onSubmit={async (input) => {
-          await transfer({
+          await transfer(input)
+        }}
+      />
+      <TransferDialog
+        open={editTransferTarget != null}
+        transfer={editTransferTarget}
+        onOpenChange={(open) => {
+          if (!open) setEditTransferTarget(null)
+        }}
+        accounts={accounts}
+        onSubmit={async (input) => {
+          if (!editTransferTarget) return
+          await updateTransfer({
+            transferId: editTransferTarget.id,
             ...input,
-            occurredOn: new Date().toISOString().slice(0, 10),
-            note: '',
           })
+          setEditTransferTarget(null)
+        }}
+      />
+      <ConfirmDialog
+        open={deleteTransferTarget != null}
+        description={t('accounts.confirmDeleteTransfer')}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTransferTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteTransferTarget) return
+          setActionError(null)
+          try {
+            await deleteTransfer(deleteTransferTarget.id)
+            setDeleteTransferTarget(null)
+          } catch {
+            setActionError(t('expense.error'))
+          }
         }}
       />
     </div>

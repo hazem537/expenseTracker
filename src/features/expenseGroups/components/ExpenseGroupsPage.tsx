@@ -35,6 +35,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
     joinByShareCode,
     leaveGroup,
     setArchived,
+    setSettleEnabled,
     deleteGroup,
   } = useExpenseGroups()
 
@@ -77,6 +78,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
           onDisableSharing={disableSharing}
           onLeave={leaveGroup}
           onArchive={setArchived}
+          onSetSettleEnabled={setSettleEnabled}
           onLeft={() => setActiveGroupId(null)}
         />
       </div>
@@ -121,6 +123,7 @@ export function ExpenseGroupsPage({ hideTitle = false }: { hideTitle?: boolean }
             memberCount={memberCounts[group.id] ?? 1}
             isCreator={Boolean(currentUserId && group.user_id === currentUserId)}
             actionsDisabled={!online}
+            archiveBlocked={group.settle_enabled && !group.archived}
             onOpen={(g) => setActiveGroupId(g.id)}
             onShare={setShareGroup}
             onArchive={(g) => {

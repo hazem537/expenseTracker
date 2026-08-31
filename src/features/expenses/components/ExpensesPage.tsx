@@ -7,7 +7,7 @@ import { useAccounts } from '@/features/accounts'
 import { useExpenseGroups } from '@/features/expenseGroups'
 import { ExpenseFormDialog } from '@/features/expenses/components/ExpenseFormDialog'
 import { useExpenses, type Expense } from '@/features/expenses/hooks/useExpenses'
-import { expensesOnMyAccounts } from '@/features/expenses/lib/displayCurrency'
+import { expensesOnMyAccounts, useExpensesInCurrency } from '@/features/expenses/lib/displayCurrency'
 import { CATEGORIES, CATEGORY_COLORS, type Category } from '@/features/expenses/lib/categories'
 import { useProfile } from '@/features/settings'
 import { DEFAULT_CURRENCY } from '@/shared/lib/currencies'
@@ -61,6 +61,25 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
 
   const showNeedCache = !online && !loading && myExpenses.length === 0 && !error
   const filtersActive = Boolean(filterAccountId || filterCategory || filterGroupId)
+
+  const selectedAccount = useMemo(
+    () => accounts.find((a) => a.id === filterAccountId) ?? null,
+    [accounts, filterAccountId],
+  )
+  const displayCurrency = selectedAccount?.currency ?? defaultCurrency
+
+  const convertedFilteredExpenses = useExpensesInCurrency(
+    filteredExpenses,
+    accounts,
+    displayCurrency,
+    online,
+  )
+
+  const filteredTotal = useMemo(
+    () =>
+      convertedFilteredExpenses.reduce((sum, item) => sum + item.amount_base, 0),
+    [convertedFilteredExpenses],
+  )
 
   function clearFilters() {
     setFilterAccountId('')
@@ -189,6 +208,25 @@ export function ExpensesPage({ hideTitle = false }: { hideTitle?: boolean }) {
           {t('expense.filterEmpty')}
         </p>
       ) : null}
+      {!loading && filteredExpenses.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
+          <div>
+            <p className="text-xs font-medium text-muted">
+              {filtersActive ? t('expense.filteredTotal') : t('expense.totalSpent')}
+            </p>
+            <p className="text-xl font-bold text-heading sm:text-2xl">
+              <MoneyText amount={filteredTotal} lang={lang} currency={displayCurrency} />
+            </p>
+          </div>
+          <div className="text-end">
+            <p className="text-xs font-medium text-muted">{t('expense.count')}</p>
+            <p className="text-lg font-bold text-heading sm:text-xl">
+              {filteredExpenses.length}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {!loading && filteredExpenses.length > 0 ? (
         <ul className="space-y-2">
           {filteredExpenses.map((item) => {

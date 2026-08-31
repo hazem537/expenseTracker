@@ -7,10 +7,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { TransferForm } from '@/features/accounts/components/TransferForm'
-import type { Account } from '@/features/accounts/hooks/useAccounts'
+import type { Account, Transfer } from '@/features/accounts/hooks/useAccounts'
 
 interface TransferDialogProps {
   open: boolean
+  transfer?: Transfer | null
   onOpenChange: (open: boolean) => void
   accounts: Account[]
   onSubmit: (input: {
@@ -18,23 +19,26 @@ interface TransferDialogProps {
     toAccountId: string
     fromAmount: number
     toAmount: number
+    occurredOn: string
+    note: string
   }) => Promise<void>
 }
 
-export function TransferDialog({ open, onOpenChange, accounts, onSubmit }: TransferDialogProps) {
+export function TransferDialog({ open, transfer, onOpenChange, accounts, onSubmit }: TransferDialogProps) {
   const { t } = useTranslation()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('accounts.transfer')}</DialogTitle>
+          <DialogTitle>{transfer ? t('accounts.editTransfer') : t('accounts.transfer')}</DialogTitle>
           <DialogDescription>{t('accounts.transferHint')}</DialogDescription>
         </DialogHeader>
         {accounts.length >= 2 ? (
           <TransferForm
-            key={String(open)}
+            key={transfer ? `edit-${transfer.id}` : `new-${String(open)}`}
             accounts={accounts}
+            transfer={transfer}
             onCancel={() => onOpenChange(false)}
             onSubmit={async (input) => {
               await onSubmit(input)

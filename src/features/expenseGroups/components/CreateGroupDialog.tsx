@@ -17,7 +17,11 @@ interface CreateGroupDialogProps {
   defaultCurrency: CurrencyCode
   actionsDisabled?: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (input: { name: string; currency: CurrencyCode }) => Promise<void>
+  onSubmit: (input: {
+    name: string
+    currency: CurrencyCode
+    settle_enabled?: boolean
+  }) => Promise<void>
 }
 
 const selectClass =
@@ -33,11 +37,15 @@ export function CreateGroupDialog({
   const { t } = useTranslation()
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrency)
+  const [settleEnabled, setSettleEnabled] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (open) setCurrency(defaultCurrency)
+    if (open) {
+      setCurrency(defaultCurrency)
+      setSettleEnabled(false)
+    }
   }, [open, defaultCurrency])
 
   async function handleSubmit(event: FormEvent) {
@@ -49,8 +57,9 @@ export function CreateGroupDialog({
     setBusy(true)
     setError(null)
     try {
-      await onSubmit({ name: name.trim(), currency })
+      await onSubmit({ name: name.trim(), currency, settle_enabled: settleEnabled })
       setName('')
+      setSettleEnabled(false)
       onOpenChange(false)
     } catch {
       setError(t('expense.error'))
@@ -65,6 +74,7 @@ export function CreateGroupDialog({
       onOpenChange={(next) => {
         if (!next) {
           setName('')
+          setSettleEnabled(false)
           setError(null)
         }
         onOpenChange(next)
@@ -102,6 +112,21 @@ export function CreateGroupDialog({
               ))}
             </select>
           </div>
+          <label className="flex items-start gap-3 rounded-xl border border-gold-soft/60 bg-gold-soft/10 px-3 py-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1 size-4 accent-[var(--gold)]"
+              checked={settleEnabled}
+              disabled={busy || actionsDisabled}
+              onChange={(e) => setSettleEnabled(e.target.checked)}
+            />
+            <span>
+              <span className="block font-medium text-heading">
+                {t('expenseGroups.settleEnabled')}
+              </span>
+              <span className="mt-0.5 block text-muted">{t('expenseGroups.settleEnabledHelp')}</span>
+            </span>
+          </label>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <div className="flex gap-2">
             <Button

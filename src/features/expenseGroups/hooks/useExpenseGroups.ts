@@ -10,6 +10,7 @@ export interface ExpenseGroup {
   currency: CurrencyCode
   share_code: string | null
   archived: boolean
+  settle_enabled: boolean
   created_at: string
 }
 
@@ -65,6 +66,7 @@ async function fetchExpenseGroupsData(): Promise<{
   const groups = (groupRows ?? []).map((row) => ({
     ...row,
     archived: Boolean(row.archived),
+    settle_enabled: Boolean(row.settle_enabled),
     share_code: row.share_code == null ? null : String(row.share_code),
   })) as ExpenseGroup[]
 
@@ -110,7 +112,7 @@ export function useExpenseGroups() {
   }
 
   const createGroup = useMutation({
-    mutationFn: async (input: { name: string; currency: CurrencyCode }) => {
+    mutationFn: async (input: { name: string; currency: CurrencyCode; settle_enabled?: boolean }) => {
       if (!supabase) throw new Error('Supabase is not configured')
       const {
         data: { session },
@@ -121,6 +123,7 @@ export function useExpenseGroups() {
         user_id: user.id,
         name: input.name.trim(),
         currency: input.currency,
+        settle_enabled: Boolean(input.settle_enabled),
       })
       if (error) throw error
     },
@@ -191,6 +194,18 @@ export function useExpenseGroups() {
     onSuccess: invalidateGroups,
   })
 
+  const setSettleEnabled = useMutation({
+    mutationFn: async ({ groupId, settleEnabled }: { groupId: string; settleEnabled: boolean }) => {
+      if (!supabase) throw new Error('Supabase is not configured')
+      const { error } = await supabase
+        .from('expense_groups')
+        .update({ settle_enabled: settleEnabled })
+        .eq('id', groupId)
+      if (error) throw error
+    },
+    onSuccess: invalidateGroups,
+  })
+
   const leaveGroup = useMutation({
     mutationFn: async (groupId: string) => {
       if (!supabase) throw new Error('Supabase is not configured')
@@ -237,7 +252,8 @@ export function useExpenseGroups() {
     loading: query.isLoading,
     error: query.error ? (query.error as Error).message : null,
     reload: invalidateGroups,
-    createGroup: (input: { name: string; currency: CurrencyCode }) => createGroup.mutateAsync(input),
+    createGroup: (input: { name: string; currency: CurrencyCode; settle_enabled?: boolean }) =>
+      createGroup.mutateAsync(input),
     enableSharing: (groupId: string) => enableSharing.mutateAsync(groupId),
     regenerateShareCode: (groupId: string) => regenerateShareCode.mutateAsync(groupId),
     disableSharing: (groupId: string) => disableSharing.mutateAsync(groupId),
@@ -245,6 +261,8 @@ export function useExpenseGroups() {
     leaveGroup: (groupId: string) => leaveGroup.mutateAsync(groupId),
     setArchived: (groupId: string, archived: boolean) =>
       setArchived.mutateAsync({ groupId, archived }),
+    setSettleEnabled: (groupId: string, settleEnabled: boolean) =>
+      setSettleEnabled.mutateAsync({ groupId, settleEnabled }),
     deleteGroup: (groupId: string) => deleteGroup.mutateAsync(groupId),
   }
 }

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
 import type { Account, Transfer } from '@/features/accounts/hooks/useAccounts'
 import { formatDate } from '@/shared/lib/format'
 import { ExpandableRecord } from '@/shared/ui/ExpandableRecord'
@@ -9,9 +11,19 @@ interface RecentTransfersProps {
   transfers: Transfer[]
   accounts: Account[]
   lang: string
+  actionsDisabled?: boolean
+  onEdit?: (transfer: Transfer) => void
+  onDelete?: (transfer: Transfer) => void
 }
 
-export function RecentTransfers({ transfers, accounts, lang }: RecentTransfersProps) {
+export function RecentTransfers({
+  transfers,
+  accounts,
+  lang,
+  actionsDisabled = false,
+  onEdit,
+  onDelete,
+}: RecentTransfersProps) {
   const { t } = useTranslation()
   const [fromId, setFromId] = useState('')
   const [toId, setToId] = useState('')
@@ -101,6 +113,36 @@ export function RecentTransfers({ transfers, accounts, lang }: RecentTransfersPr
                   <MoneyText amount={item.to_amount} lang={lang} currency={to?.currency} />
                 </p>
                 {item.note ? <p className="text-sm text-muted">{item.note}</p> : null}
+                <div className="flex justify-end gap-1 pt-1">
+                  {onEdit ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-10"
+                      aria-label={actionsDisabled ? t('offline.actionDisabled') : t('app.edit')}
+                      disabled={actionsDisabled}
+                      title={actionsDisabled ? t('offline.actionDisabled') : undefined}
+                      onClick={() => onEdit(item)}
+                    >
+                      <Pencil />
+                    </Button>
+                  ) : null}
+                  {onDelete ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-10 text-red-700 hover:text-red-800"
+                      aria-label={actionsDisabled ? t('offline.actionDisabled') : t('app.delete')}
+                      disabled={actionsDisabled}
+                      title={actionsDisabled ? t('offline.actionDisabled') : undefined}
+                      onClick={() => onDelete(item)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  ) : null}
+                </div>
               </ExpandableRecord>
             )
           })}

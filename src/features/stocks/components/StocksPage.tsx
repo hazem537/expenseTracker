@@ -203,13 +203,13 @@ export function StocksPage({ hideTitle = false }: { hideTitle?: boolean }) {
         onOpenChange={(open) => {
           if (!open) setTrade(null)
         }}
-        onSubmit={async ({ side, symbol, holdingId, shares, quote, accountId, moneyAmount }) => {
+        onSubmit={async ({ side, symbol, holdingId, shares, price, quote, accountId, moneyAmount }) => {
           if (side === 'buy') {
             await spendMoney(accountId, moneyAmount)
             await upsertHolding({
               symbol,
               shares,
-              avgCost: quote.price,
+              avgCost: price ?? quote.price,
               quoteCurrency: quote.currency,
             })
           } else {

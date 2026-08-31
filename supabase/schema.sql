@@ -450,8 +450,26 @@ create unique index if not exists expense_groups_share_code_uidx
   where share_code is not null;
 
 alter table public.expense_groups add column if not exists archived boolean not null default false;
+alter table public.expense_groups add column if not exists settle_enabled boolean not null default false;
 
 create index if not exists expense_groups_user_idx on public.expense_groups (user_id);
+
+create table if not exists public.group_settlements (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.expense_groups (id) on delete cascade,
+  from_user_id uuid not null references auth.users (id) on delete cascade,
+  to_user_id uuid not null references auth.users (id) on delete cascade,
+  amount numeric(12, 2) not null check (amount > 0),
+  account_id uuid references public.accounts (id) on delete set null,
+  account_amount numeric(12, 2),
+  fx_rate numeric(18, 8),
+  occurred_on date not null default (timezone('utc', now())::date),
+  created_at timestamptz not null default now(),
+  check (from_user_id <> to_user_id)
+);
+
+create index if not exists group_settlements_group_idx
+  on public.group_settlements (group_id, occurred_on desc);
 
 create table if not exists public.expense_group_members (
   group_id uuid not null references public.expense_groups (id) on delete cascade,
@@ -588,6 +606,33 @@ grant execute on function public.get_expense_group_account_currencies(uuid) to a
 
 alter table public.expense_groups enable row level security;
 alter table public.expense_group_members enable row level security;
+alter table public.group_settlements enable row level security;
+
+drop policy if exists "Members can select group settlements" on public.group_settlements;
+drop policy if exists "Receivers can insert group settlements" on public.group_settlements;
+
+create policy "Members can select group settlements"
+  on public.group_settlements for select
+  using (public.is_expense_group_member(group_id));
+
+create policy "Receivers can insert group settlements"
+  on public.group_settlements for insert
+  with check (
+    to_user_id = auth.uid()
+    and public.is_expense_group_member(group_id)
+    and exists (
+      select 1 from public.expense_group_members
+      where group_id = group_settlements.group_id and user_id = from_user_id
+    )
+    and exists (
+      select 1 from public.expense_group_members
+      where group_id = group_settlements.group_id and user_id = to_user_id
+    )
+    and (
+      account_id is null
+      or public.is_account_member(account_id)
+    )
+  );
 
 drop policy if exists "Members can select expense groups" on public.expense_groups;
 drop policy if exists "Users can insert expense groups" on public.expense_groups;
@@ -699,3 +744,235 @@ create policy "Users can select related profiles"
       where me.user_id = auth.uid() and them.user_id = profiles.user_id
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- Transfer RPC functions (Atomic balance updates)
+-- ---------------------------------------------------------------------------
+
+create or replace function public.create_transfer(
+  p_from_account_id uuid,
+  p_to_account_id uuid,
+  p_from_amount numeric,
+  p_to_amount numeric,
+  p_occurred_on date,
+  p_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_from_balance numeric;
+  v_fx_rate numeric;
+  v_transfer_id uuid;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if p_from_account_id = p_to_account_id then
+    raise exception 'Cannot transfer to the same account';
+  end if;
+
+  if p_from_amount <= 0 or p_to_amount <= 0 then
+    raise exception 'Transfer amounts must be greater than zero';
+  end if;
+
+  if not public.is_account_member(p_from_account_id) or not public.is_account_member(p_to_account_id) then
+    raise exception 'Not authorized for these accounts';
+  end if;
+
+  select balance into v_from_balance
+  from public.accounts
+  where id = p_from_account_id
+  for update;
+
+  if v_from_balance is null then
+    raise exception 'Source account not found';
+  end if;
+
+  if v_from_balance < p_from_amount then
+    raise exception 'Insufficient funds';
+  end if;
+
+  v_fx_rate := case when p_from_amount = 0 then 1 else p_to_amount / p_from_amount end;
+
+  insert into public.transfers (
+    user_id,
+    from_account_id,
+    to_account_id,
+    from_amount,
+    to_amount,
+    fx_rate,
+    occurred_on,
+    note
+  ) values (
+    v_user_id,
+    p_from_account_id,
+    p_to_account_id,
+    p_from_amount,
+    p_to_amount,
+    v_fx_rate,
+    p_occurred_on,
+    nullif(trim(p_note), '')
+  )
+  returning id into v_transfer_id;
+
+  update public.accounts
+  set balance = balance - p_from_amount
+  where id = p_from_account_id;
+
+  update public.accounts
+  set balance = balance + p_to_amount
+  where id = p_to_account_id;
+
+  return v_transfer_id;
+end;
+$$;
+
+create or replace function public.update_transfer(
+  p_transfer_id uuid,
+  p_from_account_id uuid,
+  p_to_account_id uuid,
+  p_from_amount numeric,
+  p_to_amount numeric,
+  p_occurred_on date,
+  p_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_old record;
+  v_from_balance numeric;
+  v_fx_rate numeric;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if p_from_account_id = p_to_account_id then
+    raise exception 'Cannot transfer to the same account';
+  end if;
+
+  if p_from_amount <= 0 or p_to_amount <= 0 then
+    raise exception 'Transfer amounts must be greater than zero';
+  end if;
+
+  select * into v_old
+  from public.transfers
+  where id = p_transfer_id
+  for update;
+
+  if v_old is null then
+    raise exception 'Transfer not found';
+  end if;
+
+  if not (
+    (public.is_account_member(v_old.from_account_id) and public.is_account_member(v_old.to_account_id))
+    and (public.is_account_member(p_from_account_id) and public.is_account_member(p_to_account_id))
+  ) then
+    raise exception 'Not authorized for these accounts';
+  end if;
+
+  -- Revert old transfer balance impact
+  update public.accounts
+  set balance = balance + v_old.from_amount
+  where id = v_old.from_account_id;
+
+  update public.accounts
+  set balance = balance - v_old.to_amount
+  where id = v_old.to_account_id;
+
+  -- Verify sufficient funds on the new/current source account
+  select balance into v_from_balance
+  from public.accounts
+  where id = p_from_account_id
+  for update;
+
+  if v_from_balance is null then
+    raise exception 'Source account not found';
+  end if;
+
+  if v_from_balance < p_from_amount then
+    raise exception 'Insufficient funds';
+  end if;
+
+  -- Apply new transfer balance impact
+  update public.accounts
+  set balance = balance - p_from_amount
+  where id = p_from_account_id;
+
+  update public.accounts
+  set balance = balance + p_to_amount
+  where id = p_to_account_id;
+
+  v_fx_rate := case when p_from_amount = 0 then 1 else p_to_amount / p_from_amount end;
+
+  update public.transfers
+  set
+    from_account_id = p_from_account_id,
+    to_account_id = p_to_account_id,
+    from_amount = p_from_amount,
+    to_amount = p_to_amount,
+    fx_rate = v_fx_rate,
+    occurred_on = p_occurred_on,
+    note = nullif(trim(p_note), '')
+  where id = p_transfer_id;
+end;
+$$;
+
+create or replace function public.delete_transfer(
+  p_transfer_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user_id uuid;
+  v_old record;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  select * into v_old
+  from public.transfers
+  where id = p_transfer_id
+  for update;
+
+  if v_old is null then
+    raise exception 'Transfer not found';
+  end if;
+
+  if not (public.is_account_member(v_old.from_account_id) and public.is_account_member(v_old.to_account_id)) then
+    raise exception 'Not authorized for these accounts';
+  end if;
+
+  -- Revert transfer balance changes
+  update public.accounts
+  set balance = balance + v_old.from_amount
+  where id = v_old.from_account_id;
+
+  update public.accounts
+  set balance = balance - v_old.to_amount
+  where id = v_old.to_account_id;
+
+  delete from public.transfers
+  where id = p_transfer_id;
+end;
+$$;
+
+grant execute on function public.create_transfer(uuid, uuid, numeric, numeric, date, text) to authenticated;
+grant execute on function public.update_transfer(uuid, uuid, uuid, numeric, numeric, date, text) to authenticated;
+grant execute on function public.delete_transfer(uuid) to authenticated;

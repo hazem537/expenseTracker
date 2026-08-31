@@ -38,6 +38,7 @@ interface StockTradeDialogProps {
     symbol: string
     holdingId?: string
     shares: number
+    price?: number
     quote: StockQuote
     accountId: string
     moneyAmount: number
@@ -59,6 +60,7 @@ export function StockTradeDialog({
   const [symbol, setSymbol] = useState('')
   const [accountId, setAccountId] = useState('')
   const [shares, setShares] = useState('')
+  const [buyPrice, setBuyPrice] = useState('')
   const [quote, setQuote] = useState<StockQuote | null>(null)
   const [receive, setReceive] = useState<number | null>(null)
   const [converting, setConverting] = useState(false)
@@ -72,6 +74,7 @@ export function StockTradeDialog({
   useEffect(() => {
     if (!open) return
     setShares('')
+    setBuyPrice('')
     setQuote(null)
     setReceive(null)
     setError(null)
@@ -91,7 +94,12 @@ export function StockTradeDialog({
     let cancelled = false
     void fetchStockQuote(activeSymbol)
       .then((next) => {
-        if (!cancelled) setQuote(next)
+        if (!cancelled) {
+          setQuote(next)
+          if (side === 'buy') {
+            setBuyPrice(String(next.price))
+          }
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -102,17 +110,27 @@ export function StockTradeDialog({
     return () => {
       cancelled = true
     }
-  }, [open, activeSymbol, t])
+  }, [open, activeSymbol, side, t])
 
   useEffect(() => {
     const sharesValue = Number(shares)
-    if (!open || !quote || !account || !Number.isFinite(sharesValue) || sharesValue <= 0) {
+    const effectivePrice = side === 'buy' ? Number(buyPrice) : (quote?.price ?? 0)
+
+    if (
+      !open ||
+      !quote ||
+      !account ||
+      !Number.isFinite(sharesValue) ||
+      sharesValue <= 0 ||
+      !Number.isFinite(effectivePrice) ||
+      effectivePrice <= 0
+    ) {
       setReceive(null)
       return
     }
     let cancelled = false
     setConverting(true)
-    void convertQuoteAmount(quote.price * sharesValue, quote.currency, account.currency)
+    void convertQuoteAmount(effectivePrice * sharesValue, quote.currency, account.currency)
       .then((amount) => {
         if (!cancelled) setReceive(amount)
       })
@@ -125,12 +143,22 @@ export function StockTradeDialog({
     return () => {
       cancelled = true
     }
-  }, [open, quote, account, shares])
+  }, [open, quote, account, shares, buyPrice, side])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     const sharesValue = Number(shares)
-    if (!quote || !account || receive == null || !Number.isFinite(sharesValue) || sharesValue <= 0) {
+    const effectivePrice = side === 'buy' ? Number(buyPrice) : (quote?.price ?? 0)
+
+    if (
+      !quote ||
+      !account ||
+      receive == null ||
+      !Number.isFinite(sharesValue) ||
+      sharesValue <= 0 ||
+      !Number.isFinite(effectivePrice) ||
+      effectivePrice <= 0
+    ) {
       setError(t('expense.error'))
       return
     }
@@ -152,6 +180,7 @@ export function StockTradeDialog({
         symbol: quote.symbol,
         holdingId: holding?.id,
         shares: sharesValue,
+        price: side === 'buy' ? effectivePrice : undefined,
         quote,
         accountId: account.id,
         moneyAmount: receive,
@@ -220,6 +249,23 @@ export function StockTradeDialog({
                 onChange={(e) => setShares(e.target.value)}
               />
             </div>
+            {side === 'buy' && quote ? (
+              <div className="space-y-1">
+                <Label htmlFor="stock-buy-price">
+                  {t('stocks.pricePerShare')} ({quote.currency})
+                </Label>
+                <Input
+                  id="stock-buy-price"
+                  type="number"
+                  min="0.0001"
+                  step="any"
+                  inputMode="decimal"
+                  required
+                  value={buyPrice}
+                  onChange={(e) => setBuyPrice(e.target.value)}
+                />
+              </div>
+            ) : null}
             <div className="space-y-1">
               <Label htmlFor="stock-trade-account">
                 {side === 'buy' ? t('stocks.fromAccount') : t('stocks.toAccount')}

@@ -8,6 +8,7 @@ interface ExpenseGroupListItemProps {
   memberCount: number
   isCreator: boolean
   actionsDisabled?: boolean
+  archiveBlocked?: boolean
   onOpen: (group: ExpenseGroup) => void
   onShare: (group: ExpenseGroup) => void
   onArchive: (group: ExpenseGroup) => void
@@ -19,6 +20,7 @@ export function ExpenseGroupListItem({
   memberCount,
   isCreator,
   actionsDisabled = false,
+  archiveBlocked = false,
   onOpen,
   onShare,
   onArchive,
@@ -27,6 +29,12 @@ export function ExpenseGroupListItem({
   const { t } = useTranslation()
   const disabledTitle = actionsDisabled ? t('offline.actionDisabled') : undefined
   const isShared = memberCount > 1 || Boolean(group.share_code)
+  const archiveDisabled = actionsDisabled || (!group.archived && archiveBlocked)
+  const archiveTitle = archiveDisabled
+    ? actionsDisabled
+      ? t('offline.actionDisabled')
+      : t('expenseGroups.archiveBlocked')
+    : undefined
 
   return (
     <li className="space-y-3 rounded-2xl border border-gold-soft/70 bg-surface p-4 shadow-[0_12px_28px_rgba(201,162,39,0.08)]">
@@ -48,6 +56,11 @@ export function ExpenseGroupListItem({
             {group.archived ? (
               <span className="ms-2 rounded-full bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted">
                 {t('expenseGroups.archivedBadge')}
+              </span>
+            ) : null}
+            {group.settle_enabled ? (
+              <span className="ms-2 rounded-full bg-gold-soft/50 px-2 py-0.5 text-xs font-medium text-heading">
+                {t('expenseGroups.settleBadge')}
               </span>
             ) : null}
           </p>
@@ -94,8 +107,8 @@ export function ExpenseGroupListItem({
             type="button"
             variant="outline"
             className="min-h-10 flex-1 rounded-xl"
-            disabled={actionsDisabled}
-            title={disabledTitle}
+            disabled={archiveDisabled}
+            title={archiveTitle}
             onClick={() => onArchive(group)}
           >
             {group.archived ? <ArchiveRestore /> : <Archive />}

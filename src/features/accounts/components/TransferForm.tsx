@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { Account } from '@/features/accounts/hooks/useAccounts'
+import type { Account, Transfer } from '@/features/accounts/hooks/useAccounts'
 import { convertAmount, fetchExchangeRate } from '@/features/accounts/lib/exchangeRate'
 
 const selectClass =
@@ -11,22 +11,37 @@ const selectClass =
 
 interface TransferFormProps {
   accounts: Account[]
+  transfer?: Transfer | null
   onSubmit: (input: {
     fromAccountId: string
     toAccountId: string
     fromAmount: number
     toAmount: number
+    occurredOn: string
+    note: string
   }) => Promise<void>
   onCancel: () => void
 }
 
-export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps) {
+export function TransferForm({ accounts, transfer, onSubmit, onCancel }: TransferFormProps) {
   const { t } = useTranslation()
-  const [fromId, setFromId] = useState(accounts[0]?.id ?? '')
-  const [toId, setToId] = useState(accounts[1]?.id ?? '')
-  const [fromAmount, setFromAmount] = useState('')
-  const [toAmount, setToAmount] = useState('')
-  const [rate, setRate] = useState<number | null>(null)
+  const [fromId, setFromId] = useState(
+    transfer?.from_account_id ?? accounts[0]?.id ?? '',
+  )
+  const [toId, setToId] = useState(
+    transfer?.to_account_id ?? (accounts[1]?.id ?? ''),
+  )
+  const [fromAmount, setFromAmount] = useState(
+    transfer ? String(transfer.from_amount) : '',
+  )
+  const [toAmount, setToAmount] = useState(
+    transfer ? String(transfer.to_amount) : '',
+  )
+  const [occurredOn, setOccurredOn] = useState(
+    transfer?.occurred_on ?? new Date().toISOString().slice(0, 10),
+  )
+  const [note, setNote] = useState(transfer?.note ?? '')
+  const [rate, setRate] = useState<number | null>(transfer?.fx_rate ?? null)
   const [converting, setConverting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,9 +54,13 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
 
   useEffect(() => {
     if (!fromAccount || !toAccount) return
+    if (fromAccount.currency === toAccount.currency) {
+      setRate(1)
+      return
+    }
     let cancelled = false
     setConverting(true)
-    void fetchExchangeRate(fromAccount.currency, toAccount.currency)
+    void fetchExchangeRate(fromAccount.currency, toAccount.currency, occurredOn)
       .then((nextRate) => {
         if (!cancelled) setRate(nextRate)
       })
@@ -54,13 +73,13 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
     return () => {
       cancelled = true
     }
-  }, [fromAccount, toAccount])
+  }, [fromAccount, toAccount, occurredOn])
 
   useEffect(() => {
     if (rate == null) return
     const send = Number(fromAmount)
     if (!Number.isFinite(send) || send <= 0) {
-      setToAmount('')
+      if (!transfer) setToAmount('')
       return
     }
     setToAmount(String(convertAmount(send, rate)))
@@ -90,6 +109,8 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
         toAccountId: toId,
         fromAmount: fromValue,
         toAmount: toValue,
+        occurredOn,
+        note,
       })
     } catch (err) {
       setError(
@@ -178,10 +199,29 @@ export function TransferForm({ accounts, onSubmit, onCancel }: TransferFormProps
           ) : null}
         </div>
       ) : null}
+      <div className="space-y-1">
+        <Label htmlFor="transfer-date">{t('expense.date')}</Label>
+        <Input
+          id="transfer-date"
+          type="date"
+          required
+          value={occurredOn}
+          onChange={(e) => setOccurredOn(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="transfer-note">{t('expense.note')}</Label>
+        <Input
+          id="transfer-note"
+          value={note}
+          placeholder={t('expense.noteOptional')}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
       <div className="flex gap-2">
         <Button type="submit" disabled={saving} className="min-h-11 flex-1 rounded-xl">
-          {t('accounts.transfer')}
+          {transfer ? t('app.save') : t('accounts.transfer')}
         </Button>
         <Button type="button" variant="secondary" className="min-h-11 rounded-xl" onClick={onCancel}>
           {t('app.cancel')}
